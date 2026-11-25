@@ -112,6 +112,18 @@ function stop() {
 
 onMounted(() => {
   if (!motionEnabled.value) return
+  const node = root.value
+  if (!node) return
+
+  /*
+   * 先量一次位置：如果页面打开时这一块已经（或快要）进入视口，
+   * 就直接开始算滚动进度，不等观察器。
+   * IntersectionObserver 在后台标签页、部分内嵌 WebView 里可能不回调，
+   * 那时四格会永远停在空白状态——内容是装饰性的，但也不该凭空消失。
+   */
+  const rect = node.getBoundingClientRect()
+  if (rect.top < window.innerHeight + 160 && rect.bottom > -160) start()
+
   observer = new IntersectionObserver(
     (entries) => {
       const e = entries[0]
@@ -121,7 +133,7 @@ onMounted(() => {
     },
     { rootMargin: '160px' },
   )
-  if (root.value) observer.observe(root.value)
+  observer.observe(node)
 })
 
 onUnmounted(() => {

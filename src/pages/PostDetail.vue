@@ -70,6 +70,18 @@ const issueNo = computed(() => issueOf(post.value?.path ?? ''))
 const reachedEnd = ref(false)
 
 let endObserver: IntersectionObserver | null = null
+/** 兜底用的滚动监听，必须能被 watchEnd / onUnmounted 清掉，否则切换文章时会越积越多 */
+let endScrollHandler: (() => void) | null = null
+
+/** 清掉文末检测的所有监听 */
+function clearEndWatchers(): void {
+  endObserver?.disconnect()
+  endObserver = null
+  if (endScrollHandler) {
+    window.removeEventListener('scroll', endScrollHandler)
+    endScrollHandler = null
+  }
+}
 
 /**
  * 只有滚到文末才盖既読印。
@@ -83,8 +95,7 @@ let endObserver: IntersectionObserver | null = null
  *   直接 observe 会拿到 null。
  */
 async function watchEnd() {
-  endObserver?.disconnect()
-  endObserver = null
+  clearEndWatchers()
   reachedEnd.value = false
 
   await nextTick()
@@ -99,14 +110,27 @@ async function watchEnd() {
     return
   }
 
+  /*
+   * 兜底：IntersectionObserver 在后台标签页、部分内嵌 WebView 里可能不回调。
+   * 不回调的后果是这个章永远盖不上——比"多盖一次"更糟。
+   * 所以同时挂一个滚动监听：用户自己滚到文末时照样盖章。
+   */
+  endScrollHandler = () => {
+    const r = el.getBoundingClientRect()
+    if (r.top >= window.innerHeight) return
+    reachedEnd.value = true
+    if (post.value) markRead(post.value.path)
+    clearEndWatchers()
+  }
+  window.addEventListener('scroll', endScrollHandler, { passive: true })
+
   endObserver = new IntersectionObserver(
     (entries) => {
       if (!entries[0]?.isIntersecting) return
       reachedEnd.value = true
       if (post.value) markRead(post.value.path)
       // 盖过章就不用再看了
-      endObserver?.disconnect()
-      endObserver = null
+      clearEndWatchers()
     },
     { rootMargin: '0px 0px -8% 0px' },
   )
@@ -118,8 +142,7 @@ watch([post, loading], () => {
 })
 
 onUnmounted(() => {
-  endObserver?.disconnect()
-  endObserver = null
+  clearEndWatchers()
 })
 </script>
 
