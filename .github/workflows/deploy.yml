@@ -1,0 +1,82 @@
+# 自动部署到 GitHub Pages
+#
+# 【它是怎么工作的】
+#   你每次 push 到 main 分支，GitHub 就在它自己的服务器上：
+#     1. 装依赖（npm ci）
+#     2. 跑检查（npm run check，包含类型检查、lint、格式、构建、素材校验）
+#     3. 把 dist/ 目录发布成网站
+#   整个过程你不用管，等一两分钟刷新网页就能看到新内容。
+#
+# 【在哪儿看进度】
+#   仓库页面 → Actions 标签 → 点最新那次运行
+#   绿色勾 = 成功；红色叉 = 失败，点进去看哪一步报错
+#
+# 【第一次要手动开一次】
+#   仓库 Settings → Pages → Build and deployment → Source 选 "GitHub Actions"
+#   （README 和 docs/DEPLOY.md 里有带图说明）
+#
+# 【这个文件一般不用改】
+#   除非你想换 Node 版本，或者改了构建命令。
+
+name: 部署网站
+
+on:
+  push:
+    branches: [main]
+  # 允许在 Actions 页面手动点一下按钮重新部署
+  workflow_dispatch:
+
+# 只允许一个部署同时进行；新的推送会取消还没跑完的旧部署
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+# GitHub Pages 部署需要的三项权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v5
+
+      - name: 安装 Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      # 单独一步：密钥检查放在最前面，让它在 Actions 日志里单独可见。
+      # npm run check 里也含这一步，这里是让"有密钥"这件事在日志顶部就跳出来，
+      # 而不是埋在一长串输出里。
+      - name: 检查有没有把密钥提交上来
+        run: npm run check:secrets
+
+      - name: 构建前的检查与打包
+        run: npm run check
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v6
+
+      - name: 上传网站文件
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 发布到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

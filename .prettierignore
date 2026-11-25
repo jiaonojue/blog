@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssg
+pagefind
+public/art
+public/gallery
+package-lock.json
+docs/reference
+
+# 自动生成的内容索引 —— 每次 npm run content:index 都会重写，
+# 格式化它们没有意义，还会让每次构建都产生一堆无意义的格式差异
+src/generated
+
+# 原始素材目录
+raw

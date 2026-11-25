@@ -1,0 +1,50 @@
+/**
+ * 字体加载 —— 三套自托管字体。
+ *
+ * 【为什么不用 Google Fonts】
+ *   国内访问 fonts.googleapis.com 经常超时，页面会卡在等字体那一步。
+ *   所以字体文件直接放在站点里（src/assets/fonts/），用自己的服务器发。
+ *
+ * 【这些文件是哪来的】
+ *   由 scripts/subset-font.py 从 @fontsource 的完整字体里裁出来，
+ *   只保留站点实际用到的字，体积从几 MB 降到几百 KB。
+ *   跑 npm run fonts 会重新生成。加了新文章之后如果出现"某个字字形不对"，
+ *   就是需要重新跑一次。
+ *
+ * 【想换字体】
+ *   改 tokens.css 里的 --font-display / --font-quote / --font-mono，
+ *   再把 scripts/subset-font.py 的 FONTS 清单换成新字体，跑一次 npm run fonts。
+ */
+
+/* ── 站酷快乐体：标题、大字号、印章感 ─────────────────────── */
+@font-face {
+  font-family: 'ZCOOL KuaiLe';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/zcool-kuaile-subset.woff2') format('woff2');
+  /* 只用了这一个子集，范围写全，避免浏览器再去别处找 */
+  unicode-range: U+0000-00FF, U+2000-206F, U+3000-303F, U+4E00-9FFF, U+FF00-FFEF;
+}
+
+/* ── 霞鹜文楷：引文、寄语、需要"手写感"的段落 ────────────── */
+@font-face {
+  font-family: 'LXGW WenKai';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/lxgw-wenkai-subset.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+2000-206F, U+3000-303F, U+4E00-9FFF, U+FF00-FFEF;
+}
+
+/* ── Space Grotesk：数字、日期、代码、标签 ────────────────── */
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/space-grotesk-subset.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}

@@ -1,0 +1,71 @@
+# 依赖与构建产物 —— 这些不进仓库
+node_modules/
+dist/
+dist-ssg/
+.vite/
+*.local
+
+# 编辑器 / 系统
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# 环境变量与密钥 —— 这是最重要的一组，别删
+#
+# 任何 .env 文件都可能装着密钥，一律不进仓库。
+# 唯一例外是 .env.example：它是空模板，故意要提交，好让你知道该往哪填。
+.env
+.env.*
+!.env.example
+
+# 私钥 / 证书 —— 这种东西不该出现在一个博客仓库里
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+id_ecdsa
+id_ecdsa.*
+
+# 各种工具的凭据文件
+.npmrc
+.netrc
+credentials.json
+service-account*.json
+
+# 云服务 CLI 的本地配置
+.aws/
+.azure/
+.gcloud/
+
+# Python（做图片和字体处理时产生的缓存）
+__pycache__/
+*.pyc
+
+# Pagefind 中间产物
+pagefind/
+
+# 临时目录
+tmp/
+.tmp/
+
+# 插画原始大图（从素材站下载的原始文件，上百 MB）
+# 处理后的成品在 public/art 和 public/gallery，原图只留本地
+raw/
+
+# AI 助手的中间文件（计划、缓存），跟网站本身无关，不该出现在公开仓库
+.zcode/

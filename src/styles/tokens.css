@@ -1,0 +1,119 @@
+/**
+ * 设计令牌 —— 全站唯一的颜色 / 尺寸 / 时长来源。
+ *
+ * 【想换主色】改下面 --accent 和 --accent-soft 两行即可，全站生效。
+ * 【想换底色】改 --bg、--bg-soft、--surface 三行。
+ * 【不要在其它文件里写死颜色】，不然换主题时会漏掉那一处。
+ *
+ * 两套主题靠 <html data-theme="..."> 切换，模板不需要知道自己在哪套主题里。
+ */
+
+:root {
+  /* ── 尺寸 ─────────────────────────────── */
+  --r-card: 20px;
+  --r-input: 12px;
+  --r-pill: 999px;
+  --w-stroke: 2px;
+  --page-max: 1200px;
+  --prose-max: 680px;
+
+  /* ── 动效时长 ──────────────────────────── */
+  --t-fast: 160ms;
+  --t-base: 240ms;
+  --t-slow: 420ms;
+  --t-wipe: 500ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ── 层级 ─────────────────────────────── */
+  --z-noise: 1;
+  --z-content: 10;
+  --z-nav: 100;
+  --z-drawer: 200;
+  --z-cursor: 300;
+
+  /* ── 字体 ─────────────────────────────── */
+  --font-body:
+    'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif;
+  --font-display: 'ZCOOL KuaiLe', var(--font-body);
+  --font-quote: 'LXGW WenKai', var(--font-body);
+  --font-mono: 'Space Grotesk', ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+
+/* ── Daylight：日系清新 + 樱粉奶油（默认 / 亮色） ────────────── */
+:root,
+[data-theme='daylight'] {
+  color-scheme: light;
+
+  --bg: #fff8f4;
+  --bg-soft: #fdefe9;
+  --surface: #ffffff;
+  --ink: #211c22;
+  --ink-soft: #6b6270;
+  --line: #eadfd8;
+
+  --accent: #ff5c8a;
+  --accent-soft: #ffe3ec;
+  --accent-ink: #ffffff;
+
+  --shadow: 0 10px 30px rgba(80, 40, 60, 0.08);
+  --shadow-lift: 0 16px 40px rgba(80, 40, 60, 0.14);
+
+  /* 噪点层不透明度：太高会显脏 */
+  --noise-opacity: 0.04;
+  /* 主视觉渐隐到背景色的遮罩 */
+  --veil-from: rgba(255, 248, 244, 0);
+  --veil-to: #fff8f4;
+  /* 光斑混合模式 */
+  --glow-blend: soft-light;
+  --glow-color: rgba(255, 138, 172, 0.55);
+
+  /* 印章朱色：文章末尾的「完」、卡片上的「已读」。
+   * 比主色深半档，才像印泥落在纸上，而不是一个高亮标签。 */
+  --stamp-ink: #c93c56;
+}
+
+/* ── Neon：赛博霓虹（第二主题 / 暗色） ──────────────────────── */
+[data-theme='neon'] {
+  color-scheme: dark;
+
+  --bg: #0b0a12;
+  --bg-soft: #12101c;
+  --surface: #171426;
+  --ink: #f3efff;
+  --ink-soft: #a79fbe;
+  --line: #2a2440;
+
+  --accent: #ff4d9d;
+  --accent-soft: #2a1030;
+  --accent-ink: #ffffff;
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 16px 44px rgba(0, 0, 0, 0.6);
+
+  --noise-opacity: 0.06;
+  --veil-from: rgba(11, 10, 18, 0);
+  --veil-to: #0b0a12;
+  --glow-blend: screen;
+  --glow-color: rgba(255, 77, 157, 0.4);
+
+  /* 霓虹主题下的印章：朱红在暗底上会发闷，换成偏洋红的高饱和粉 */
+  --stamp-ink: #ff6b9e;
+}
+
+/* ── 减少动效：系统设置或站内开关命中时，所有时长归零 ────────── */
+[data-motion='off'] {
+  --t-fast: 0ms;
+  --t-base: 0ms;
+  --t-slow: 0ms;
+  --t-wipe: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 0ms;
+    --t-base: 0ms;
+    --t-slow: 0ms;
+    --t-wipe: 0ms;
+  }
+}

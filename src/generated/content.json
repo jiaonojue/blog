@@ -1,0 +1,428 @@
+{
+  "posts": [
+    {
+      "title": "备忘：几个让我少走弯路的命令行",
+      "date": "2026-11-24",
+      "slug": "cli-notes",
+      "year": "2026",
+      "category": "fragment",
+      "tags": [
+        "备忘录",
+        "git",
+        "npm"
+      ],
+      "summary": "不长记性，所以记在这里。都是些每次用都要想一下的东西：撤销提交、找回删掉的分支、看清楚 npm 装了什么。",
+      "draft": false,
+      "sample": true,
+      "minutes": 2,
+      "path": "/posts/2026/cli-notes"
+    },
+    {
+      "title": "为什么我用 Vue 重写了一个静态博客",
+      "date": "2026-11-22",
+      "slug": "vue-ssg-blog",
+      "year": "2026",
+      "category": "tech",
+      "tags": [
+        "Vue",
+        "构建",
+        "折腾"
+      ],
+      "summary": "静态博客不需要框架。但我想要路由转场、想要主题切换、想要组件复用，所以我加了框架，然后花了很多时间在\"怎么让它不要变重\"这件事上。",
+      "cover": "/art/posts/vue-ssg.webp",
+      "draft": false,
+      "sample": true,
+      "minutes": 3,
+      "path": "/posts/2026/vue-ssg-blog"
+    },
+    {
+      "title": "时间是最狠的那个角色：《葬送的芙莉莲》",
+      "date": "2026-11-18",
+      "slug": "frieren",
+      "year": "2026",
+      "category": "anime",
+      "tags": [
+        "奇幻",
+        "治愈",
+        "长篇"
+      ],
+      "summary": "一个活一千年的精灵，用几十年的时间去理解一个只陪了她十年的勇者。这部的温柔不在于它不悲伤，而在于它承认悲伤来得太晚。",
+      "cover": "/art/posts/frieren.webp",
+      "draft": false,
+      "sample": true,
+      "minutes": 2,
+      "path": "/posts/2026/frieren"
+    },
+    {
+      "title": "把日子过成清单：《摇曳露营》",
+      "date": "2026-11-10",
+      "slug": "yurucamp",
+      "year": "2026",
+      "category": "anime",
+      "tags": [
+        "日常",
+        "治愈",
+        "露营"
+      ],
+      "summary": "没有冲突，没有反派，只有一个高中女生骑着自行车去看富士山。看完会想出门，也会想给自己煮一杯热的东西。",
+      "cover": "/art/posts/yurucamp.webp",
+      "draft": false,
+      "sample": true,
+      "minutes": 2,
+      "path": "/posts/2026/yurucamp"
+    },
+    {
+      "title": "我是怎么给站点做减法的",
+      "date": "2026-11-05",
+      "slug": "less-is-more",
+      "year": "2026",
+      "category": "essay",
+      "tags": [
+        "设计",
+        "取舍"
+      ],
+      "summary": "一开始什么都想加：播放器、评论、统计、鼠标特效。最后砍到只剩\"读起来舒服\"这一件事。这篇记录我砍掉了什么，以及为什么。",
+      "draft": false,
+      "sample": true,
+      "minutes": 2,
+      "path": "/posts/2026/less-is-more"
+    },
+    {
+      "title": "再次成为少年的那一天：《灵能百分百》",
+      "date": "2026-10-28",
+      "slug": "mob-psycho",
+      "year": "2026",
+      "category": "anime",
+      "tags": [
+        "超能力",
+        "成长",
+        "作画"
+      ],
+      "summary": "全人类最强的超能力者，最大的愿望是让喜欢的女生多看他一眼。它把\"青春期\"拍成了一种能力，也拍成了一种病。",
+      "cover": "/art/posts/mob.webp",
+      "draft": false,
+      "sample": true,
+      "minutes": 2,
+      "path": "/posts/2026/mob-psycho"
+    },
+    {
+      "title": "一部关于\"如何记住\"的电影：《你的名字。》",
+      "date": "2026-10-15",
+      "slug": "your-name",
+      "year": "2026",
+      "category": "anime",
+      "tags": [
+        "剧场版",
+        "新海诚",
+        "爱情"
+      ],
+      "summary": "身体互换只是引子。真正被处理的主题是：一个人怎么在忘记之后，仍然被另一个人影响，然后靠着这点残余去找他。",
+      "cover": "/art/posts/your-name.webp",
+      "draft": false,
+      "sample": true,
+      "minutes": 2,
+      "path": "/posts/2026/your-name"
+    },
+    {
+      "title": "关于\"写下来\"这件事",
+      "date": "2026-09-30",
+      "slug": "why-write",
+      "year": "2026",
+      "category": "essay",
+      "tags": [
+        "随笔",
+        "写作"
+      ],
+      "summary": "我不觉得自己有值得被记录的生活。但每次写完之后，那段时间就不一样了——它从\"过去了\"变成了\"发生过了\"。",
+      "draft": false,
+      "sample": true,
+      "minutes": 2,
+      "path": "/posts/2026/why-write"
+    }
+  ],
+  "favorites": [
+    {
+      "slug": "frieren",
+      "title": "葬送的芙莉莲",
+      "type": "anime",
+      "status": "已看完",
+      "score": 9.5,
+      "cover": "/art/favorites/frieren.webp",
+      "link": "https://bangumi.tv/subject/400602",
+      "sample": true,
+      "note": "近五年最喜欢的番。它把\"失去\"讲得很轻，所以更重。战斗场面意外地扎实，但真正留住我的是那些什么都不发生的镜头。"
+    },
+    {
+      "slug": "hollow-knight",
+      "title": "空洞骑士",
+      "type": "game",
+      "status": "通关 + 部分 DLC",
+      "score": 9,
+      "cover": "/art/favorites/hollow-knight.webp",
+      "link": "https://www.hollowknight.com/",
+      "sample": true,
+      "note": "难度很高，但难得很公平。地图设计是我见过最讲究的——它不用箭头指引你，它用地形暗示你。"
+    },
+    {
+      "slug": "kamimura",
+      "title": "神山纯一 - 故乡的原风景",
+      "type": "music",
+      "status": "常驻",
+      "score": 9.4,
+      "artist": "神山纯一",
+      "link": "https://music.163.com/",
+      "sample": true,
+      "note": "写东西的时候放这首。没有人声，没有情绪引导，就是一段一直在走的旋律。"
+    },
+    {
+      "slug": "miyazaki",
+      "title": "宫崎骏 - 出发点",
+      "type": "book",
+      "status": "在读",
+      "score": 8.4,
+      "artist": "宫崎骏",
+      "sample": true,
+      "note": "访谈和随笔的合集。最有意思的部分是他讲\"做不出来的时候怎么办\"——他也会卡，而且卡很久。"
+    },
+    {
+      "slug": "mob-psycho",
+      "title": "灵能百分百",
+      "type": "anime",
+      "status": "已看完",
+      "score": 9.2,
+      "cover": "/art/favorites/mob.webp",
+      "link": "https://bangumi.tv/subject/196042",
+      "sample": true,
+      "note": "第二季第六集是那种\"看完要站起来走两圈\"的作画。故事本身也比表面看起来深：它讲的是怎么和自己身上不受控的部分相处。"
+    },
+    {
+      "slug": "murakami",
+      "title": "村上春树 - 当我谈跑步时我谈些什么",
+      "type": "book",
+      "status": "读过两遍",
+      "score": 8.6,
+      "artist": "村上春树",
+      "sample": true,
+      "note": "不是一本讲跑步的书，是一本讲\"怎么坚持一件没有尽头的事\"的书。跑步只是他的例子。"
+    },
+    {
+      "slug": "sakamoto",
+      "title": "坂本龙一 - Merry Christmas Mr. Lawrence",
+      "type": "music",
+      "status": "常驻",
+      "score": 9.6,
+      "artist": "坂本龙一",
+      "link": "https://music.163.com/",
+      "sample": true,
+      "note": "这首听过无数个版本。原版最克制，也最耐听。适合在很安静的时候，不适合在需要振作的时候。"
+    },
+    {
+      "slug": "stardew",
+      "title": "星露谷物语",
+      "type": "game",
+      "status": "玩了两百小时",
+      "score": 9.3,
+      "cover": "/art/favorites/stardew.webp",
+      "link": "https://www.stardewvalley.net/",
+      "sample": true,
+      "note": "最治愈的游戏，也是最容易玩到凌晨四点的游戏。它的设计哲学很朴素：每天只给你那么一点体力，所以你只能选着做。"
+    },
+    {
+      "slug": "your-name",
+      "title": "你的名字。",
+      "type": "anime",
+      "status": "已看完",
+      "score": 8.8,
+      "cover": "/art/favorites/your-name.webp",
+      "link": "https://bangumi.tv/subject/178019",
+      "sample": true,
+      "note": "画面是绝对的第一档。故事被说过\"薄\"，但我反而觉得它克制得很好——它只问了一个问题，然后给了一个很朴素的答案。"
+    },
+    {
+      "slug": "yurucamp",
+      "title": "摇曳露营",
+      "type": "anime",
+      "status": "已看完",
+      "score": 9,
+      "cover": "/art/favorites/yurucamp.webp",
+      "link": "https://bangumi.tv/subject/223339",
+      "sample": true,
+      "note": "看的时候一直在想\"我也要去\"。看完还是没去，但在家煮了泡面。这大概就是它的作用。"
+    }
+  ],
+  "gallery": [
+    {
+      "title": "傍晚的电车",
+      "date": "2026-11-20",
+      "image": "/gallery/evening-train.webp",
+      "caption": "车窗外的城市往后退，车厢里的人都在看手机。只有我在看外面。",
+      "sample": true
+    },
+    {
+      "title": "便利店的光",
+      "date": "2026-10-30",
+      "image": "/gallery/convenience-store.webp",
+      "caption": "凌晨的便利店像一个小岛。进去买瓶水，出来又是深夜。",
+      "sample": true
+    },
+    {
+      "title": "下雨的十字路口",
+      "date": "2026-10-12",
+      "image": "/gallery/rainy-crossing.webp",
+      "caption": "没带伞。站在屋檐下等了十分钟，雨反而更大了，就干脆走进去了。",
+      "sample": true
+    },
+    {
+      "title": "夏天的云",
+      "date": "2026-08-18",
+      "image": "/gallery/summer-clouds.webp",
+      "caption": "那种高得离谱的积雨云。拍下来之后发现，照片只有当时的十分之一。",
+      "sample": true
+    },
+    {
+      "title": "书桌一角",
+      "date": "2026-07-22",
+      "image": "/gallery/desk.webp",
+      "caption": "一直很乱，但我知道每样东西在哪。收拾整齐反而找不到。",
+      "sample": true
+    },
+    {
+      "title": "夜里的路灯",
+      "date": "2026-06-05",
+      "image": "/gallery/night-lamp.webp",
+      "caption": "走夜路的时候，路灯是有温度的。明明只是钠灯的黄。",
+      "sample": true
+    },
+    {
+      "title": "海边的傍晚",
+      "date": "2026-05-14",
+      "image": "/gallery/seaside-dusk.webp",
+      "caption": "海水是暖的。风很大，说话要喊，所以谁也没说话。",
+      "sample": true
+    },
+    {
+      "title": "窗边的下午",
+      "date": "2026-04-02",
+      "image": "/gallery/window-afternoon.webp",
+      "caption": "光斜进来，落在桌面上，把灰尘照得很清楚。那一刻什么都没做，但觉得没浪费时间。",
+      "sample": true
+    }
+  ],
+  "tools": [
+    {
+      "name": "哔哩哔哩",
+      "desc": "看番的地方。用得最多的功能是\"稍后再看\"，因为总在奇怪的时间点看到推荐。",
+      "url": "https://www.bilibili.com/",
+      "icon": "coffee",
+      "group": "生活",
+      "sample": true
+    },
+    {
+      "name": "Excalidraw",
+      "desc": "画手绘风示意图。写技术文章解释结构的时候，比截图清楚。",
+      "url": "https://excalidraw.com/",
+      "icon": "pen",
+      "group": "写作",
+      "sample": true
+    },
+    {
+      "name": "Figma",
+      "desc": "做界面草图。这个站的配色和圆角都是先在它里面摆一遍才写进 CSS 的。",
+      "url": "https://www.figma.com/",
+      "icon": "palette",
+      "group": "设计",
+      "sample": true
+    },
+    {
+      "name": "Obsidian",
+      "desc": "本地 Markdown 笔记。写想法的时候用它，双链能让我记得自己以前想过什么。",
+      "url": "https://obsidian.md/",
+      "icon": "pen",
+      "group": "写作",
+      "sample": true
+    },
+    {
+      "name": "Squoosh",
+      "desc": "在线压图片，直接在浏览器里跑。偶尔想快速看一张图压完多大，用它比开 Photoshop 快。",
+      "url": "https://squoosh.app/",
+      "icon": "palette",
+      "group": "设计",
+      "sample": true
+    },
+    {
+      "name": "VS Code",
+      "desc": "写代码的地方。装个 Volar，Vue 文件就有完整补全和类型提示。",
+      "url": "https://code.visualstudio.com/",
+      "icon": "code",
+      "group": "开发",
+      "sample": true
+    }
+  ],
+  "now": {
+    "html": "<h2 id=\"这周在做什么\">这周在做什么</h2>\n<p>在把这个站搭起来。进度比我预想的慢，主要是花时间在删东西上——每加一个模块，都会顺手砍掉两个&quot;感觉不错但其实没用&quot;的功能。</p>\n<h2 id=\"在看\">在看</h2>\n<ul>\n<li>《葬送的芙莉莲》第二遍。这次注意到很多之前的细节，尤其是一些没有台词的过场。</li>\n<li>一本讲出版的旧书，看得很慢，一天两三页。</li>\n</ul>\n<h2 id=\"在写\">在写</h2>\n<ul>\n<li>这篇 Now。</li>\n<li>一篇关于&quot;为什么我不给站点加评论&quot;的随笔，还没想清楚结尾。</li>\n</ul>\n<h2 id=\"在学\">在学</h2>\n<ul>\n<li>用 <code>fonttools</code> 做中文字体子集化。一个中文字体动辄好几兆，只保留用到的字能压到一百多 KB。原理不复杂，参数有点多。</li>\n<li><code>IntersectionObserver</code>。以前只会用 scroll 事件算位置，现在知道有更省事的办法。</li>\n</ul>\n<h2 id=\"最近的小事\">最近的小事</h2>\n<p>阳台上的绿萝活过来了。之前以为它死了，浇了两周水，冒了新叶。</p>\n<hr>\n<p><em>这一页会随时改。想到什么就写上来，不用完整。</em></p>\n",
+    "updated": "2026-11-24"
+  },
+  "about": {
+    "html": "<p>我不太会写自我介绍。</p>\n<p>通常的模板是&quot;热爱生活、热爱技术&quot;，但这两句放在谁身上都成立，所以放在我身上也没什么信息。</p>\n<p>比较实在的说法是：</p>\n<p>我喜欢看番，喜欢看到一部作品里某个只有我会注意到的细节。我写代码，喜欢那种把一个模糊的想法变成能点能看的东西的过程。我也喜欢记东西，不是因为有价值，是因为不记就忘了。</p>\n<p>这个站就是这三件事的合集。</p>\n<p>如果你在这里看到什么对你有用的，那就挺好。如果只是随便翻翻，也挺好。</p>\n",
+    "qa": [
+      {
+        "q": "你是谁？",
+        "a": "一个普通的上网的人。喜欢看番，写点代码，偶尔记一些想法。不太擅长介绍自己。"
+      },
+      {
+        "q": "这个站是干什么的？",
+        "a": "放三个东西——番剧感想、技术备忘、随笔。都是给自己写的，顺便放出来。"
+      },
+      {
+        "q": "为什么叫这个名字？",
+        "a": "因为很多想法如果不写下来，过几个月就没了。这个站就是个回声。"
+      },
+      {
+        "q": "多久更新一次？",
+        "a": "不定期。有时间、有想说的就写。不想为了更新而更新。"
+      },
+      {
+        "q": "用的什么技术？",
+        "a": "Vue 3 + Vite，用 vite-ssg 预渲染成静态页面，放在 GitHub Pages 上。内容是 Markdown 文件。"
+      },
+      {
+        "q": "页面上的画是你画的吗？",
+        "a": "不是。插画的出处都登记在「素材来源」页，版权归原作者。如果原图作者不希望作品出现在这里，可以联系我下架。"
+      },
+      {
+        "q": "可以转载你的文章吗？",
+        "a": "可以，注明出处就行。但如果只是复制一遍发到别的地方，那还是直接贴链接比较好。"
+      },
+      {
+        "q": "你最喜欢的番是哪部？",
+        "a": "《葬送的芙莉莲》。它让我意识到，很多事当时不做，以后就没有那个时机了。"
+      },
+      {
+        "q": "有什么想对来看的人说的？",
+        "a": "没什么特别的。随便看看，觉得哪句有意思就够了。"
+      },
+      {
+        "q": "这个站会一直更新吗？",
+        "a": "不知道。我希望会。但\"希望\"和\"做到\"之间隔着很久。"
+      }
+    ],
+    "timeline": [
+      {
+        "year": "2026",
+        "text": "第一次自己做网站，把想法整理成现在这个样子。"
+      },
+      {
+        "year": "2024",
+        "text": "开始有\"想把看过的番写下来\"的念头，当时只在笔记里记了几行。"
+      },
+      {
+        "year": "2022",
+        "text": "学会了一点 Vue。第一次觉得\"我好像也能做出一个页面\"。"
+      },
+      {
+        "year": "2019",
+        "text": "第一次接触前端。对着教程抄了一段 HTML，看到浏览器里出现文字，那个瞬间记到现在。"
+      }
+    ]
+  }
+}

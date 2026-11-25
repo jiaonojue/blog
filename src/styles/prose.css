@@ -1,0 +1,199 @@
+/* 文章正文排版 —— 只有 .prose 内部的元素会用到这些样式 */
+
+.prose {
+  max-width: var(--prose-max);
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--ink);
+}
+
+@media (max-width: 767px) {
+  .prose {
+    font-size: 15px;
+    line-height: 1.85;
+  }
+}
+
+.prose > * + * {
+  margin-top: 1.4em;
+}
+
+.prose h2 {
+  margin-top: 2.4em;
+  padding-bottom: 0.4em;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.6vw, 1.75rem);
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 96px;
+}
+
+.prose h3 {
+  margin-top: 1.9em;
+  font-size: 1.18rem;
+  scroll-margin-top: 96px;
+}
+
+.prose h4 {
+  margin-top: 1.6em;
+  font-size: 1.02rem;
+  color: var(--ink-soft);
+}
+
+.prose p {
+  margin: 0;
+}
+
+.prose strong {
+  font-weight: 700;
+}
+
+.prose a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--t-fast) var(--ease-out);
+}
+
+.prose a:hover {
+  text-decoration-color: var(--ink);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.4em;
+}
+
+.prose ul {
+  list-style: none;
+}
+
+.prose ul > li {
+  position: relative;
+}
+
+/* 列表符号用一个小方块，比默认圆点更像手账 */
+.prose ul > li::before {
+  content: '';
+  position: absolute;
+  left: -1em;
+  top: 0.75em;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose li + li {
+  margin-top: 0.5em;
+}
+
+.prose blockquote {
+  margin: 1.8em 0;
+  padding: 0.9em 1.3em;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--r-input) var(--r-input) 0;
+  background: var(--bg-soft);
+  font-family: var(--font-quote);
+  color: var(--ink-soft);
+}
+
+.prose blockquote > * + * {
+  margin-top: 0.8em;
+}
+
+.prose hr {
+  margin: 2.6em 0;
+  border: 0;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ── 代码 ───────────────────────────────────────────────── */
+.prose code {
+  padding: 0.15em 0.4em;
+  border-radius: 5px;
+  background: var(--bg-soft);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.prose pre {
+  margin: 1.6em 0;
+  padding: 1.1em 1.3em;
+  overflow-x: auto;
+  border-radius: var(--r-input);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 13.5px;
+  line-height: 1.7;
+  /* 代码块横向滚动时不要撑破页面 */
+  max-width: 100%;
+}
+
+.prose pre code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+}
+
+/* Shiki 输出的双主题代码块：靠 CSS 变量选当前该显示哪一套 */
+.prose .shiki,
+.prose .shiki span {
+  color: var(--shiki-light);
+  background-color: transparent;
+}
+
+[data-theme='neon'] .prose .shiki,
+[data-theme='neon'] .prose .shiki span {
+  color: var(--shiki-dark);
+}
+
+.prose .shiki {
+  background: var(--surface) !important;
+}
+
+/* ── 表格 ───────────────────────────────────────────────── */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  display: block;
+  overflow-x: auto;
+}
+
+.prose th,
+.prose td {
+  padding: 0.6em 0.9em;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.prose th {
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* ── 图片 ───────────────────────────────────────────────── */
+.prose img {
+  margin: 1.8em auto;
+  border-radius: var(--r-input);
+  border: 1px solid var(--line);
+}
+
+.prose figure {
+  margin: 1.8em 0;
+}
+
+.prose figcaption {
+  margin-top: 0.6em;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-soft);
+}

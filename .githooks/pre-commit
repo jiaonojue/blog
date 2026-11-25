@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# 提交前自检 —— git 会在 commit 之前调用这个文件。
+#
+# 【它做什么】
+#   扫一遍即将提交的文件，发现私钥 / token 就拒绝这次提交。
+#   这是防止密钥被推到 GitHub 的最后一道闸，比事后删文件有用得多。
+#
+# 【如果它误拦了你】
+#   看屏幕上给出的文件:行号，改掉那一行，或者在那一行末尾加 // secret-scan-ignore。
+#
+# 【怎么启用】
+#   在仓库根目录执行一次：
+#       git config core.hooksPath .githooks
+#   （setup 时已经配好，通常不用你手动做）
+#
+# 【想临时跳过（不推荐）】
+#       git commit --no-verify
+
+set -e
+
+# 找到 node：优先 PATH，其次项目自带的便携版
+if command -v node >/dev/null 2>&1; then
+  NODE=node
+elif [ -x "/e/tools/node/node" ]; then
+  NODE="/e/tools/node/node"
+else
+  echo "[pre-commit] 找不到 node，跳过密钥扫描。"
+  exit 0
+fi
+
+"$NODE" "$(git rev-parse --show-toplevel)/scripts/check-secrets.mjs"
