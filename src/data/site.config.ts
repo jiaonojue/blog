@@ -11,7 +11,7 @@ export const site = {
   /** 站点名，显示在浏览器标签、页脚、文章标题后面 */
   title: '回声记录',
   /** 你的昵称，显示在页脚「© 2026 xxx」和关于页 */
-  handle: 'YOUR_NAME',
+  handle: 'jiaonojue',
   /** 一句话介绍，首页大标题下面会做打字机效果 */
   tagline: '看番、写码、随手记一点什么',
 
@@ -19,7 +19,7 @@ export const site = {
   description: '一个写番剧感想、技术备忘与生活随笔的个人博客。',
 
   /** 站点网址，末尾带斜杠。部署到 GitHub Pages 后改成真实地址 */
-  url: 'https://YOUR_GITHUB_NAME.github.io',
+  url: 'https://jiaonojue.github.io',
   /** 子路径前缀，必须以 / 开头和结尾 */
   base: '/blog/',
 
@@ -30,7 +30,7 @@ export const site = {
   footerNote: '慢一点也没关系，路还长。',
 
   /** 素材下架通道：权利方看到自己的图想让我撤，从这里联系 */
-  issuesUrl: 'https://github.com/YOUR_GITHUB_NAME/blog/issues',
+  issuesUrl: 'https://github.com/jiaonojue/blog/issues',
 
   /**
    * 功能开关。
