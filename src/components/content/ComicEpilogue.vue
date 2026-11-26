@@ -541,26 +541,37 @@ onUnmounted(() => {
   }
 }
 
-/* 站内开关关掉动效时同样退化 */
-:global([data-motion='off']) .comic {
+/*
+ * 站内开关关掉动效时同样退化。
+ *
+ * 【:global() 必须包住整条选择器】
+ *   写成 `:global([data-motion='off']) .comic` 是错的：Vue 的 scoped 编译
+ *   只把 :global() 里面那一段原样保留，外面的 .comic 会被丢掉，
+ *   产物变成裸的 `[data-motion='off'] { height: auto; ... }`——
+ *   这条规则直接命中 <html>，把整页改成 position: relative、padding-block: 56px。
+ *   更糟的是下面那条四选择器的规则会塌缩成一条，把 opacity: 1、transform: none
+ *   强加到全站每一个元素上。
+ *   正确写法是把整条选择器放进 :global()，见 Home.vue 里 [data-theme='neon'] 的用法。
+ */
+:global([data-motion='off'] .comic) {
   height: auto;
 }
 
-:global([data-motion='off']) .comic-stage {
+:global([data-motion='off'] .comic-stage) {
   position: relative;
   height: auto;
   min-height: 0;
   padding-block: 56px;
 }
 
-:global([data-motion='off']) .panel-art {
+:global([data-motion='off'] .panel-art) {
   clip-path: none;
 }
 
-:global([data-motion='off']) .panel-tone,
-:global([data-motion='off']) .panel-rays,
-:global([data-motion='off']) .panel-char,
-:global([data-motion='off']) .panel-caption {
+:global([data-motion='off'] .panel-tone),
+:global([data-motion='off'] .panel-rays),
+:global([data-motion='off'] .panel-char),
+:global([data-motion='off'] .panel-caption) {
   opacity: 1;
   transform: none;
 }

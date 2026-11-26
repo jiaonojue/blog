@@ -3,9 +3,25 @@ import { site } from '@/data/site.config'
 import SiteMark from '@/components/ui/SiteMark.vue'
 import { navItems } from '@/data/site.config'
 import { settings } from '@/composables/useSettings'
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
-const year = new Date().getFullYear()
+/*
+ * 年份要分两段写：
+ *   1. 预渲染时用的是"构建那一年的年份"，所以 HTML 里先写死它；
+ *   2. 浏览器里再用真实年份覆盖一次（跨年后访问不会停在旧年份）。
+ * 不能直接在 setup 里 new Date()：SSG 构建的 HTML 和浏览器算出的值不一致，
+ * 会造成 hydration 不匹配。
+ */
+const buildYear = new Date().getFullYear()
+const year = ref(buildYear)
+onMounted(() => {
+  year.value = new Date().getFullYear()
+})
+
+/** 建站当年不重复显示：2026，而不是 2026–2026 */
+const copyright = computed(() =>
+  year.value === site.since ? `© ${site.since}` : `© ${site.since}–${year.value}`,
+)
 
 /** 页脚只放默认可见的次要链接，不放任何联系方式 */
 const footerLinks = computed(() =>
@@ -21,7 +37,7 @@ const footerLinks = computed(() =>
       <div class="footer-body">
         <div class="footer-brand">
           <SiteMark :size="22" :framed="false" />
-          <p class="footer-copy">© {{ site.since }}–{{ year }} {{ site.handle }}</p>
+          <p class="footer-copy">{{ copyright }} {{ site.handle }}</p>
         </div>
 
         <nav class="footer-links" aria-label="页脚导航">

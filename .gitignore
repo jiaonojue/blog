@@ -63,6 +63,9 @@ pagefind/
 tmp/
 .tmp/
 
+# 本地预览用的目录联接（把 dist 挂到 /blog/ 下验证子路径）
+.preview/
+
 # 插画原始大图（从素材站下载的原始文件，上百 MB）
 # 处理后的成品在 public/art 和 public/gallery，原图只留本地
 raw/

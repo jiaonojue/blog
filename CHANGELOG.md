@@ -109,6 +109,24 @@
 - **目次行的印章贴到右边缘**（375px）：缩小尺寸并调整间距
 - **`format:check` 因自动生成文件失败**：`src/generated` 加入 `.prettierignore`
 - **`tokens.css` 残留废弃变量**：清掉 `--deep-*` 一组
+- **滚动入场动画会让内容永久消失**（最严重的一个）：`RevealOnScroll` 原本是
+  "CSS 默认 `opacity: 0`，JS 观察器回调后才显示"。只要 IntersectionObserver 不回调
+  （后台标签页被节流、部分内嵌 WebView、省电模式暂停渲染），或过渡动画的渲染循环被暂停，
+  文章卡片就一直是透明的——内容消失，不是少一次动画。
+  改成反向约定：**CSS 默认可见**，只有 JS 确认"元素在视口外且观察器已挂上"才临时加
+  `is-armed` 藏起来；兜底计时器摘掉 `is-armed` 时不走过渡，立刻可见。
+  `ComicEpilogue` 和 `PostDetail` 的既読检测也按同样思路加了兜底
+- **关闭站内动效开关会破坏整页布局**：`ComicEpilogue.vue` 里写成
+  `:global([data-motion='off']) .comic`。Vue 的 scoped 编译只保留 `:global()` 里面那段，
+  外面的 `.comic` 被丢掉，产物变成裸的 `[data-motion='off'] { height: auto;
+position: relative; padding-block: 56px }`——直接命中 `<html>`，整页被改成
+  `position: relative` 并加上下 56px 内边距；下面那条四选择器的规则还会塌缩成一条，
+  把 `opacity: 1; transform: none` 强加到全站每个元素上。
+  改为把整条选择器放进 `:global()`，四格在关闭动效时正常退化成自动高度
+- **页脚在建站当年显示「© 2026–2026」**：`site.since` 与当前年份相同时只显示一个年份；
+  顺便把年份改成"预渲染用构建年、挂载后用真实年"，避免跨年后停在旧年份
+- **文章详情页的既読滚动监听会累积**：切换文章时旧的 `scroll` 监听没被清掉。
+  抽出 `clearEndWatchers()`，在 `watchEnd()` 和 `onUnmounted()` 里都调用
 
 ### 变更
 
