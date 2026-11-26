@@ -528,6 +528,17 @@ onUnmounted(() => {
     padding-block: 56px;
   }
 
+  /*
+   * 关键：原稿纸必须拿到一个真实高度。
+   * .comic-paper 是 height: 100%，父级一旦变成 auto 它就塌成 0；
+   * 而四格的画格、旁白框全是绝对定位，撑不出高度，
+   * 结果是四个画格被压成几条细线。这里给回一个可用的高度。
+   */
+  .comic-paper {
+    height: auto;
+    min-height: min(78vh, 680px);
+  }
+
   .panel-art {
     clip-path: none;
   }
@@ -562,6 +573,12 @@ onUnmounted(() => {
   height: auto;
   min-height: 0;
   padding-block: 56px;
+}
+
+/* 同 prefers-reduced-motion：原稿纸要有真实高度，否则四格被压扁 */
+:global([data-motion='off'] .comic-paper) {
+  height: auto;
+  min-height: min(78vh, 680px);
 }
 
 :global([data-motion='off'] .panel-art) {
