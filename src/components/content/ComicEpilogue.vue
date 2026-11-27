@@ -211,6 +211,17 @@ onUnmounted(() => {
   background: var(--bg);
 }
 
+/*
+ * 暗场下这一节不要再垫一整块实底。
+ * 实底会把固定在视口上的背景插画整个盖住——
+ * 白天纸白盖住看不出来，夜里就是"连着好几页纯黑"。
+ * 换成半透的深色薄纱：插画透出来，漫画纸（--surface 卡片）照旧压在上面。
+ */
+:global([data-theme='neon'] .comic),
+:global([data-zone='moyu'] .comic) {
+  background: color-mix(in srgb, var(--bg) 42%, transparent);
+}
+
 .comic-stage {
   position: sticky;
   top: 0;

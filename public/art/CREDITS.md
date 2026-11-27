@@ -72,10 +72,15 @@
 | `bg/bg-41.webp` | 雪山热气球 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7269698 | 仅个人展示 | 2026-11-26 | C | 背景图，粉调清晨 |
 | `bg/bg-42.webp` | 拱桥夕照 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7269691 | 仅个人展示 | 2026-11-26 | C | 背景图，紫金黄昏 |
 | `bg/bg-43.webp` | 天空之城 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7094129 | 仅个人展示 | 2026-11-26 | C | 背景图，蓝绿奇幻 |
-| `girls/moyu-companion.webp` | 戴帽少女 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=4363932 | 仅个人展示 | 2026-11-28 | C | 摸鱼分区角落的看板娘，羽化蒙版融入暗场 |
-| `girls/quiet-end.webp` | 比心道别 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=4291392 | 仅个人展示 | 2026-11-28 | C | 空白页末尾「完」旁的小插画，压淡羽化 |
-| `girls/notes-desk.webp` | 桌前等门开 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=4482277 | 仅个人展示 | 2026-11-28 | C | 便条板密钥门旁的插画，宽屏显示 |
-| `girls/kimono-snow.webp` | 雪地和伞 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7353755 | 仅个人展示 | 2026-11-28 | C | 备用插画（暂未上站） |
+| `girls/moyu-companion.webp` | 地板上和猫玩的午后 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=374673 | 仅个人展示 | 2026-11-28 | C | 摸鱼分区角落的看板娘，羽化蒙版融入暗场 |
+| `girls/quiet-end.webp` | 兔耳帽小瞬 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=3872 | 仅个人展示 | 2026-11-28 | C | 空白页末尾「完」旁的小插画，压淡羽化 |
+| `girls/notes-desk.webp` | 房间里抱着兔子玩偶 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=3524891 | 仅个人展示 | 2026-11-28 | C | 便条板密钥门旁的插画，宽屏显示 |
+| `girls/insert-01.webp` | 三人茶会 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=82301 | 仅个人展示 | 2026-11-28 | C | 首页「插画页」中挿之一 |
+| `girls/insert-02.webp` | 出门前排好队 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=1322640 | 仅个人展示 | 2026-11-28 | C | 首页「插画页」中挿之二 |
+| `girls/insert-03.webp` | 楼梯间的光 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=2370 | 仅个人展示 | 2026-11-28 | C | 首页「插画页」中挿之三 |
+| `girls/insert-04.webp` | 放学路上 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=234631 | 仅个人展示 | 2026-11-28 | C | 首页「插画页」中挿之四 |
+| `girls/insert-05.webp` | 烟花的那天 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=211263 | 仅个人展示 | 2026-11-28 | C | 首页「插画页」中挿之五 |
+| `girls/insert-06.webp` | 夏天的猫 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=927 | 仅个人展示 | 2026-11-28 | C | 首页「插画页」中挿之六 |
 | anime/14741.webp 等 173 张 | 番剧封面合集 | 各作品版权方 | https://anilist.co | 仅个人展示 | 2026-11-26 | C | 工具页「番剧评分表」用；经 AniList 取到的作品封面，文件名即 AniList 作品 ID |
 
 ---

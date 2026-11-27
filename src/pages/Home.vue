@@ -15,6 +15,7 @@ import { settings, motionEnabled } from '@/composables/useSettings'
 import { pageOf, pad2, isRead } from '@/composables/useBook'
 import TypeLine from '@/components/motion/TypeLine.vue'
 import RevealOnScroll from '@/components/motion/RevealOnScroll.vue'
+import GlowTitle from '@/components/motion/GlowTitle.vue'
 import PetalField from '@/components/motion/PetalField.vue'
 import ComicEpilogue from '@/components/content/ComicEpilogue.vue'
 import QuietPages from '@/components/content/QuietPages.vue'
@@ -56,6 +57,38 @@ const totalMinutes = computed(() => posts.reduce((sum, p) => sum + (p.minutes ??
 
 /** 首页那一句自述 */
 const selfNote = '这里放着我正在看的东西、踩过的坑，和一些没什么用但舍不得删的念头。'
+
+/* ══ 中挿插画页 ═════════════════════════════════════════════
+ * 同人志翻到一半会突然夹进来几页彩页——这一节就是那几页。
+ * 六张插画横向排开（可滑动），每张是一页"插进书里的画"：
+ * 纸框、胶带、页码、一句小字。它不承载任何信息，
+ * 存在的意义就是"翻着翻着，有一页是画"。
+ */
+const INSERTS: { src: string; caption: string }[] = [
+  { src: '/art/girls/insert-01.webp', caption: '三点钟，点心和茶都有。' },
+  { src: '/art/girls/insert-02.webp', caption: '出门之前，伙伴先排好队。' },
+  { src: '/art/girls/insert-03.webp', caption: '秋天，楼梯间刚好有光。' },
+  { src: '/art/girls/insert-04.webp', caption: '放学路上稍微绕了点远。' },
+  { src: '/art/girls/insert-05.webp', caption: '烟花升起来的时候，忘了要说什么。' },
+  { src: '/art/girls/insert-06.webp', caption: '夏天最后一天，猫比我先睡着。' },
+]
+
+/* 插画页的悬停 tilt：光标在卡片上的位置 → 轻微 3D 转动 */
+function onInsertTilt(e: MouseEvent) {
+  if (!motionEnabled.value) return
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  const x = (e.clientX - r.left) / r.width - 0.5
+  const y = (e.clientY - r.top) / r.height - 0.5
+  el.style.setProperty('--tx', `${(-y * 7).toFixed(2)}deg`)
+  el.style.setProperty('--ty', `${(x * 9).toFixed(2)}deg`)
+}
+
+function onInsertReset(e: MouseEvent) {
+  const el = e.currentTarget as HTMLElement
+  el.style.setProperty('--tx', '0deg')
+  el.style.setProperty('--ty', '0deg')
+}
 
 /**
  * 首屏标题文本。
@@ -176,20 +209,28 @@ function stripTick() {
  * 「最近在写」的三张卡片下面是一整块舞台。
  * 这一块滚进视口的过程中，整块平面从"稍微后仰"的角度
  * 慢慢立正（rotateX 7° → 0°）。滚动进度写进 CSS 变量，
- * 变换本身留在 CSS 里算。
+ * 变换本身留在 CSS 里算。插画页横条用同一套进度，
+ * 只不过它是绕竖轴轻轻侧一点头（rotateY 5° → 0°）。
  */
 const postGrid = ref<HTMLElement | null>(null)
+const insertStrip = ref<HTMLElement | null>(null)
 
 let scrollRaf = 0
 function onScrollFrame() {
   scrollRaf = 0
+  const vh = window.innerHeight
   const grid = postGrid.value
   if (grid) {
     const r = grid.getBoundingClientRect()
-    const vh = window.innerHeight
     // 从"刚露头"到"过了视口 40%"之间走完立正
     const p = Math.max(0, Math.min(1, (vh - r.top) / (vh * 0.6)))
     grid.style.setProperty('--p', p.toFixed(3))
+  }
+  const strip = insertStrip.value
+  if (strip) {
+    const r = strip.getBoundingClientRect()
+    const p = Math.max(0, Math.min(1, (vh - r.top) / (vh * 0.7)))
+    strip.style.setProperty('--p', p.toFixed(3))
   }
 }
 
@@ -271,7 +312,7 @@ onUnmounted(() => {
     <section class="container section">
       <RevealOnScroll>
         <header class="section-head">
-          <h2 class="section-title">最近在写</h2>
+          <h2 class="section-title"><GlowTitle text="最近在写" /></h2>
           <RouterLink to="/posts" class="section-more">
             全部文章
             <ArrowRight :size="14" :stroke-width="2" aria-hidden="true" />
@@ -290,7 +331,7 @@ onUnmounted(() => {
     <section v-if="featuredFavorites.length" class="container section">
       <RevealOnScroll>
         <header class="section-head">
-          <h2 class="section-title">最近在看</h2>
+          <h2 class="section-title"><GlowTitle text="最近在看" /></h2>
           <RouterLink to="/favorites" class="section-more">
             全部收藏
             <ArrowRight :size="14" :stroke-width="2" aria-hidden="true" />
@@ -353,6 +394,46 @@ onUnmounted(() => {
       </div>
     </section>
 
+    <!-- ══ 中挿插画页 ══════════════════════════════════════ -->
+    <!--
+      同人志翻到一半会突然夹进来几页彩页——这一节就是那几页。
+      六张插画横向排开，可以左右滑；纸框、胶带、页码、一句小字。
+      它不承载任何信息：翻着翻着，有一页是画，仅此而已。
+    -->
+    <section class="container section insert-section" data-pagefind-ignore>
+      <RevealOnScroll>
+        <header class="section-head">
+          <h2 class="section-title"><GlowTitle text="插画页" /></h2>
+          <span class="insert-kicker">color insert · 中间夹页</span>
+        </header>
+      </RevealOnScroll>
+
+      <div ref="insertStrip" class="insert-strip">
+        <figure
+          v-for="(p, i) in INSERTS"
+          :key="p.src"
+          class="insert-page"
+          :style="{ '--i': i }"
+          @mousemove="onInsertTilt"
+          @mouseleave="onInsertReset"
+        >
+          <span class="insert-tape" aria-hidden="true">插画 · {{ pad2(i + 1) }}</span>
+          <img
+            :src="withBase(p.src)"
+            :alt="p.caption"
+            loading="lazy"
+            decoding="async"
+            width="1200"
+            height="800"
+          />
+          <figcaption class="insert-caption">
+            <span class="insert-no">P.{{ pad2(17 + i * 3) }}</span>
+            <span class="insert-text">{{ p.caption }}</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
     <!-- ══ 一句话 ══════════════════════════════════════════ -->
     <section class="container section">
       <RevealOnScroll>
@@ -374,7 +455,7 @@ onUnmounted(() => {
     <section class="container section contents-section">
       <RevealOnScroll>
         <header class="section-head">
-          <h2 class="section-title">目次</h2>
+          <h2 class="section-title"><GlowTitle text="目次" /></h2>
           <RouterLink to="/posts" class="section-more">
             全部 {{ posts.length }} 篇
             <ArrowRight :size="14" :stroke-width="2" aria-hidden="true" />
@@ -939,7 +1020,125 @@ onUnmounted(() => {
   }
 }
 
+/* ── 中挿插画页 ─────────────────────────────────────────── */
+/*
+ * 横向滑动的"夹页"。每一页是一张带纸框的画。
+ * 滚动进度 --p（脚本写入）让整条在进场时绕竖轴轻轻侧一下头；
+ * hover 时每页按光标位置微微 3D 转动（--tx / --ty 由脚本写）。
+ */
+.insert-section {
+  margin-top: 88px;
+}
+
+.insert-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.insert-strip {
+  display: flex;
+  gap: 26px;
+  overflow-x: auto;
+  padding: 26px 4px 10px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  transform: perspective(1600px) rotateY(calc((1 - var(--p, 1)) * 5deg));
+  transform-origin: 0 50%;
+}
+
+.insert-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.insert-page {
+  position: relative;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  padding: 12px 12px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transform: rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
+  transform-style: preserve-3d;
+  transition:
+    transform 260ms var(--ease-out),
+    box-shadow 260ms var(--ease-out);
+}
+
+.insert-page:hover {
+  box-shadow: var(--shadow-lift);
+}
+
+/* 页脚：页码 + 一句话 */
+.insert-caption {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 9px;
+}
+
+.insert-no {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.insert-text {
+  font-family: var(--font-quote);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* 胶带：贴在每页左上角，微微歪着 */
+.insert-tape {
+  position: absolute;
+  top: -9px;
+  left: 14px;
+  z-index: 1;
+  padding: 2px 10px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 24%, white 10%);
+  color: color-mix(in srgb, var(--accent-ink) 82%, var(--accent));
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  transform: rotate(-4deg);
+  opacity: 0.9;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+/* 横条两端淡淡化掉，暗示"可以往两边滑" */
+@media (min-width: 1024px) {
+  .insert-strip {
+    mask-image: linear-gradient(to right, transparent, black 3%, black 97%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 3%, black 97%, transparent);
+  }
+}
+
+.insert-page img {
+  height: clamp(240px, 34vh, 400px);
+  width: auto;
+  border-radius: 6px;
+  background: var(--bg-soft);
+  display: block;
+}
+
+@media (max-width: 767px) {
+  .insert-page img {
+    height: 240px;
+  }
+}
+
 /* ── 一句话区 ───────────────────────────────────────────── */
+
 .one-line {
   display: flex;
   align-items: flex-start;

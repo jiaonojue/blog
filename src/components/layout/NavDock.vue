@@ -76,9 +76,16 @@ async function flyTo(side: DockSide) {
   )
 }
 
-/** 点了导航链接：按它在栏目里的位置决定飞往哪一侧 */
-function onNavClick(i: number) {
-  void flyTo(dockForIndex(i, visibleItems.value.length))
+/**
+ * 点了导航链接：按它在栏目里的位置决定飞往哪一侧。
+ *
+ * 【唯一的例外是「首页」】
+ *   回首页 = 一切回到默认的样子，顶栏也回正中——
+ *   它是"把玩具收回去"的那个按钮，跟点印章同一个意思。
+ */
+function onNavClick(i: number, item: { path: string }) {
+  const side = item.path === '/' ? 'center' : dockForIndex(i, visibleItems.value.length)
+  void flyTo(side)
 }
 
 /** 点印章回首页：顺便把顶栏送回居中 */
@@ -152,7 +159,7 @@ const currentTheme = computed(
             :to="item.path"
             class="dock-link"
             :style="{ '--i': i }"
-            @click="onNavClick(i)"
+            @click="onNavClick(i, item)"
           >
             {{ item.label }}
           </RouterLink>

@@ -308,8 +308,8 @@ watch(unlocked, (on) => {
         class="gate-companion"
         :src="deskGirlUrl"
         alt=""
-        width="1100"
-        height="963"
+        width="931"
+        height="1100"
         loading="lazy"
         decoding="async"
       />

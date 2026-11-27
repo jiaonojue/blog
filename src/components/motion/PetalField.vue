@@ -76,14 +76,35 @@ onMounted(() => {
   const h = () => el.clientHeight
   const petals: Petal[] = Array.from({ length: MAX_PETALS }, () => createPetal(w(), h(), true))
 
+  /*
+   * 风：来自页面滚动本身。
+   * 滚得越快，横向的风越大，花瓣被"吹"得横着飘；
+   * 松手之后风慢慢停。方向跟滚动方向一致——
+   * 往下滑等于风往下扫，花瓣就往右跑（下一页的意思）。
+   */
+  let wind = 0
+  let lastY = window.scrollY
+  const onWind = () => {
+    const dy = window.scrollY - lastY
+    lastY = window.scrollY
+    wind += Math.max(-2.4, Math.min(2.4, dy * 0.012))
+    wind = Math.max(-2.4, Math.min(2.4, wind))
+  }
+  window.addEventListener('scroll', onWind, { passive: true })
+
   const step = () => {
     if (!ctx) return
     ctx.clearRect(0, 0, w(), h())
+    // 每帧衰减：冲动过去后回归无风
+    wind *= 0.94
     for (const p of petals) {
       p.y += p.vy
-      p.x += p.vx
-      p.rot += p.vr
+      p.x += p.vx + wind
+      p.rot += p.vr + wind * 0.004
       if (p.y > h() + 20) Object.assign(p, createPetal(w(), h()))
+      // 被风吹出边界的那一侧，从另一边接回来
+      if (p.x > w() + 24) p.x = -24
+      if (p.x < -24) p.x = w() + 24
       drawPetal(p)
     }
     raf = requestAnimationFrame(step)

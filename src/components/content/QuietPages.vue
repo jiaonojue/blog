@@ -156,8 +156,8 @@ onUnmounted(() => {
         class="quiet-girl"
         :src="girlUrl"
         alt=""
-        width="708"
-        height="1000"
+        width="1000"
+        height="750"
         loading="lazy"
         decoding="async"
       />
@@ -176,6 +176,18 @@ onUnmounted(() => {
   position: relative;
   background: color-mix(in srgb, var(--bg) 88%, var(--ink) 12%);
   border-top: 1px solid var(--line);
+}
+
+/*
+ * 暗场下这一层纱要透一点。
+ * 白天它是"比纸深一档"的实底；夜里如果还是实底，
+ * 这三屏就是三页纯黑，背景插画完全看不见。
+ * 55% 的深色薄纱：底图透出来，上面的短句（--ink 亮色）仍然读得清。
+ */
+:global([data-theme='neon'] .quiet),
+:global([data-zone='moyu'] .quiet) {
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  border-top-color: color-mix(in srgb, var(--line) 60%, transparent);
 }
 
 /* ── 每一句 ─────────────────────────────────────────────── */

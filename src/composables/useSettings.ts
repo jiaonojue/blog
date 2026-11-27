@@ -43,7 +43,8 @@ export const DEFAULTS: Settings = {
   cursorGlow: true,
   customCursor: true,
   cursorTrail: false,
-  petals: false,
+  // 花瓣默认开：樱花是这个站的一部分。老访客的 localStorage 里存过 false 的话以他们为准
+  petals: true,
   aboutIllustration: true,
   hiddenNav: ['tools', 'now', 'credits'],
 }
