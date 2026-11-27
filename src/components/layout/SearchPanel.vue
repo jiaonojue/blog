@@ -222,7 +222,6 @@ defineExpose({ show })
           <div class="finder-body">
             <!-- 还没输入：给几个提示，不留空 -->
             <div v-if="!hasQuery" class="finder-hint">
-              <p class="hint-lead">直接打字就行。</p>
               <p class="hint-sub">
                 <kbd>/</kbd>
                 或

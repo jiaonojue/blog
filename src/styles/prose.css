@@ -218,16 +218,25 @@
   font-size: inherit;
 }
 
-/* Shiki 输出的双主题代码块：靠 CSS 变量选当前该显示哪一套 */
-.prose .shiki,
+/*
+ * Shiki 双主题代码块。
+ *
+ * 【夜间规则为什么必须 !important】
+ *   Shiki 把颜色写在最内层 <span style="color:#24292E;--shiki-dark:#DBD7CAEE"> 上，
+ *   是行内样式，优先级高于样式表里的普通声明。不加 !important 盖不住，
+ *   夜间主题下代码块会保持亮色主题的深灰字，压在深色底上几乎看不见。
+ *
+ * 【亮色规则为什么不写 color】
+ *   Shiki 只输出了 --shiki-dark，没有 --shiki-light。亮色主题直接用行内那个
+ *   color 就是对的，不用干预。
+ */
 .prose .shiki span {
-  color: var(--shiki-light);
-  background-color: transparent;
+  background-color: transparent !important;
 }
 
 [data-theme='neon'] .prose .shiki,
 [data-theme='neon'] .prose .shiki span {
-  color: var(--shiki-dark);
+  color: var(--shiki-dark) !important;
 }
 
 .prose .shiki {

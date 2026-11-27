@@ -10,6 +10,7 @@ import ReadStamp from '@/components/content/ReadStamp.vue'
 import RevealOnScroll from '@/components/motion/RevealOnScroll.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import TapeLabel from '@/components/ui/TapeLabel.vue'
+import { ChevronDown } from '@lucide/vue'
 
 useSeo({ title: '文章', description: '番剧感想、技术备忘与生活随笔的全部文章。' })
 
@@ -21,6 +22,9 @@ const active = ref<string>('all')
  * 和分类是两个独立的维度：先按分类筛，再按标签筛。
  */
 const activeTag = ref<string>('')
+
+/** 标签栏默认收起：18 个标签全铺开太占地方，想用的人自己点开 */
+const tagsOpen = ref(false)
 
 /** 全部标签（按出现次数从多到少），只列出现过的 */
 const allTags = computed(() => {
@@ -141,22 +145,44 @@ onUnmounted(() => setBackdrop(''))
       </div>
     </nav>
 
-    <!-- 标签筛选：分类下面一行，密度比分类低，用 # 前缀区分 -->
-    <nav v-if="allTags.length" class="tag-bar" aria-label="按标签筛选">
+    <!--
+      标签筛选：默认收起，点「标签」才展开。
+      18 个标签全铺开太占地方，而且大部分人不会用第二层筛选。
+    -->
+    <div v-if="allTags.length" class="tag-fold">
       <button
-        v-for="[tag, count] in allTags"
-        :key="tag"
         type="button"
-        class="tag-btn"
-        :class="{ active: activeTag === tag }"
-        :aria-pressed="activeTag === tag"
-        @click="activeTag = activeTag === tag ? '' : tag"
+        class="tag-toggle"
+        :aria-expanded="tagsOpen"
+        @click="tagsOpen = !tagsOpen"
       >
-        <span class="tag-hash" aria-hidden="true">#</span>
-        {{ tag }}
-        <span class="tag-count">{{ count }}</span>
+        <span class="tag-toggle-label">标签</span>
+        <span v-if="activeTag" class="tag-toggle-current">#{{ activeTag }}</span>
+        <ChevronDown
+          :size="14"
+          :stroke-width="2"
+          class="tag-toggle-chevron"
+          :class="{ open: tagsOpen }"
+          aria-hidden="true"
+        />
       </button>
-    </nav>
+
+      <nav v-show="tagsOpen" class="tag-bar" aria-label="按标签筛选">
+        <button
+          v-for="[tag, count] in allTags"
+          :key="tag"
+          type="button"
+          class="tag-btn"
+          :class="{ active: activeTag === tag }"
+          :aria-pressed="activeTag === tag"
+          @click="activeTag = activeTag === tag ? '' : tag"
+        >
+          <span class="tag-hash" aria-hidden="true">#</span>
+          {{ tag }}
+          <span class="tag-count">{{ count }}</span>
+        </button>
+      </nav>
+    </div>
 
     <!-- 空状态 -->
     <EmptyState
@@ -280,37 +306,89 @@ onUnmounted(() => setBackdrop(''))
 
 /* ── 标签筛选 ───────────────────────────────────────────── */
 /*
- * 比分类低一档：更小、无边框、只在选中时上色。
- * 这样视觉上不会和分类抢，但又能一眼看出是"第二层筛选"。
+ * 默认收起，只留一个「标签 ▾」按钮。
+ * 点开后才铺开所有标签——18 个标签一直铺着太占地方。
  */
+.tag-fold {
+  margin-top: -26px;
+  margin-bottom: 36px;
+}
+
+.tag-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  transition:
+    color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    background-color var(--t-fast) var(--ease-out);
+}
+
+.tag-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--bg-soft);
+}
+
+.tag-toggle-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+/* 收起状态下如果有筛选，把当前标签显示在按钮上，不然看不出来 */
+.tag-toggle-current {
+  color: var(--accent);
+}
+
+.tag-toggle-chevron {
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+.tag-toggle-chevron.open {
+  transform: rotate(180deg);
+}
+
 .tag-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 6px;
-  margin-top: -30px;
-  margin-bottom: 40px;
+  gap: 6px;
+  margin-top: 12px;
 }
 
+/*
+ * 每个标签都带一圈边框：
+ * 之前是纯文字，看不出哪里能点，像一段普通文字。
+ */
 .tag-btn {
   display: inline-flex;
   align-items: baseline;
-  gap: 2px;
-  padding: 3px 9px;
+  gap: 3px;
+  padding: 4px 11px;
   border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
   font-size: 12.5px;
   color: var(--ink-soft);
   transition:
     background-color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
     color var(--t-fast) var(--ease-out);
 }
 
 .tag-btn:hover {
   background: var(--bg-soft);
+  border-color: var(--accent);
   color: var(--accent);
 }
 
 .tag-btn.active {
   background: var(--accent-soft);
+  border-color: var(--accent);
   color: var(--accent);
 }
 

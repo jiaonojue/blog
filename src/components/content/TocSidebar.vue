@@ -65,6 +65,8 @@ function jumpTo(id: string, event: MouseEvent) {
   top: 104px;
   max-height: calc(100dvh - 140px);
   overflow-y: auto;
+  /* 内容超出时只纵向滚，横向永远不要出现滚动条 */
+  overflow-x: hidden;
   padding-left: 16px;
   border-left: 1px solid var(--line);
 }
@@ -83,6 +85,12 @@ function jumpTo(id: string, event: MouseEvent) {
   gap: 2px;
 }
 
+/*
+ * 链接用负 margin 往左探出去，让左边框贴住 .toc 的竖线。
+ * 负 margin 会让盒子向左多出 1px，悬停的 translateX 又会向右多出 2px——
+ * 这两点都算进滚动溢出，于是目录底部冒出一条横向滚动条。
+ * 由 .toc 的 overflow-x: hidden 兜住，这里保持原样即可。
+ */
 .toc a {
   display: block;
   padding: 5px 0;

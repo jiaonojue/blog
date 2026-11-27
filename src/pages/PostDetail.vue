@@ -16,7 +16,6 @@ import TocSidebar from '@/components/content/TocSidebar.vue'
 import TapeLabel from '@/components/ui/TapeLabel.vue'
 import WashiDivider from '@/components/ui/WashiDivider.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import OpenBook from '@/components/content/OpenBook.vue'
 import PageTabs from '@/components/content/PageTabs.vue'
 import Colophon from '@/components/content/Colophon.vue'
 import MarginNotes from '@/components/content/MarginNotes.vue'
@@ -163,9 +162,6 @@ onUnmounted(() => {
     </EmptyState>
 
     <template v-else>
-      <!-- 开卷：第一次进入这篇时，屏幕中央短暂浮出书名页 -->
-      <OpenBook :title="post.title" :category="post.category" :page="pageNo" :path="post.path" />
-
       <div class="post-layout">
         <!-- ══ 正文列 ══════════════════════════════════════ -->
         <article class="post-article">
