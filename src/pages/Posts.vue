@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { posts, categoryLabel, withBase } from '@/composables/useContent'
 import { categories } from '@/data/site.config'
 import { useSeo } from '@/composables/useSeo'
+import { setBackdrop } from '@/composables/useBackground'
 import { issueOf, pageOf, pad2, isRead } from '@/composables/useBook'
 import PostCard from '@/components/content/PostCard.vue'
 import ReadStamp from '@/components/content/ReadStamp.vue'
@@ -14,6 +15,21 @@ useSeo({ title: '文章', description: '番剧感想、技术备忘与生活随�
 
 /** 当前筛选的分类：'all' 表示全部 */
 const active = ref<string>('all')
+
+/**
+ * 当前筛选的标签，空字符串表示不按标签筛。
+ * 和分类是两个独立的维度：先按分类筛，再按标签筛。
+ */
+const activeTag = ref<string>('')
+
+/** 全部标签（按出现次数从多到少），只列出现过的 */
+const allTags = computed(() => {
+  const count = new Map<string, number>()
+  for (const post of posts) {
+    for (const tag of post.tags) count.set(tag, (count.get(tag) ?? 0) + 1)
+  }
+  return [...count.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+})
 
 /**
  * 视图：卡片（默认）或目次。
@@ -35,9 +51,11 @@ const tabs = computed(() => [
   })),
 ])
 
-const filtered = computed(() =>
-  active.value === 'all' ? posts : posts.filter((p) => p.category === active.value),
-)
+const filtered = computed(() => {
+  let list = active.value === 'all' ? posts : posts.filter((p) => p.category === active.value)
+  if (activeTag.value) list = list.filter((p) => p.tags.includes(activeTag.value))
+  return list
+})
 
 /** 按年份分组，给列表加一点归档感 */
 const grouped = computed(() => {
@@ -52,6 +70,25 @@ const grouped = computed(() => {
 
 void categoryLabel
 void withBase
+
+/*
+ * 切换筛选时把页面背景一起换掉。
+ *
+ * 优先级：标签 > 分类 > 路由默认。
+ * 标签比分类更具体，选了标签就看标签那张图；
+ * 都清空（'all' + 无标签）时把覆盖交还给 App.vue 的路由默认规则。
+ * 离开页面时也要清，否则跳到文章页背景还停在这里那张。
+ */
+watch(
+  [active, activeTag],
+  ([c, t]) => {
+    if (t) setBackdrop(`tag:${t}`)
+    else if (c !== 'all') setBackdrop(`category:${c}`)
+    else setBackdrop('')
+  },
+  { immediate: true },
+)
+onUnmounted(() => setBackdrop(''))
 </script>
 
 <template>
@@ -102,6 +139,23 @@ void withBase
           <span class="view-glyph" aria-hidden="true">☰</span>
         </button>
       </div>
+    </nav>
+
+    <!-- 标签筛选：分类下面一行，密度比分类低，用 # 前缀区分 -->
+    <nav v-if="allTags.length" class="tag-bar" aria-label="按标签筛选">
+      <button
+        v-for="[tag, count] in allTags"
+        :key="tag"
+        type="button"
+        class="tag-btn"
+        :class="{ active: activeTag === tag }"
+        :aria-pressed="activeTag === tag"
+        @click="activeTag = activeTag === tag ? '' : tag"
+      >
+        <span class="tag-hash" aria-hidden="true">#</span>
+        {{ tag }}
+        <span class="tag-count">{{ count }}</span>
+      </button>
     </nav>
 
     <!-- 空状态 -->
@@ -222,6 +276,53 @@ void withBase
   font-family: var(--font-mono);
   font-size: 11px;
   opacity: 0.7;
+}
+
+/* ── 标签筛选 ───────────────────────────────────────────── */
+/*
+ * 比分类低一档：更小、无边框、只在选中时上色。
+ * 这样视觉上不会和分类抢，但又能一眼看出是"第二层筛选"。
+ */
+.tag-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-top: -30px;
+  margin-bottom: 40px;
+}
+
+.tag-btn {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
+}
+
+.tag-btn:hover {
+  background: var(--bg-soft);
+  color: var(--accent);
+}
+
+.tag-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tag-hash {
+  font-family: var(--font-mono);
+  opacity: 0.5;
+}
+
+.tag-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  opacity: 0.45;
 }
 
 /* ── 视图切换 ───────────────────────────────────────────── */

@@ -29,15 +29,16 @@ npm run build
 
 **先看这两份文档，按「我想做什么」找**：
 
-| 我想……               | 看这里                                                |
-| -------------------- | ----------------------------------------------------- |
-| 改站名、昵称、导航   | [docs/EDITING.md#1](docs/EDITING.md#1-改站名昵称网址) |
-| 换主题色             | [docs/EDITING.md#2](docs/EDITING.md#2-换主题色)       |
-| 写一篇新文章         | [docs/EDITING.md#4](docs/EDITING.md#4-写一篇新文章)   |
-| 加收藏 / 相册 / 工具 | [docs/EDITING.md](docs/EDITING.md) 第 5-7 节          |
-| 换图、处理图片       | [docs/EDITING.md#9](docs/EDITING.md#9-换首页大图)     |
-| 发布到 GitHub Pages  | [docs/DEPLOY.md](docs/DEPLOY.md)                      |
-| 网站坏了想回滚       | [docs/DEPLOY.md#6](docs/DEPLOY.md#6-出错了怎么回滚)   |
+| 我想……               | 看这里                                                      |
+| -------------------- | ----------------------------------------------------------- |
+| 改站名、昵称、导航   | [docs/EDITING.md#1](docs/EDITING.md#1-改站名昵称网址)       |
+| 换主题色             | [docs/EDITING.md#2](docs/EDITING.md#2-换主题色)             |
+| 写一篇新文章         | [docs/EDITING.md#4](docs/EDITING.md#4-写一篇新文章)         |
+| 加收藏 / 相册 / 工具 | [docs/EDITING.md](docs/EDITING.md) 第 5-7 节                |
+| 换图、处理图片       | [docs/EDITING.md#9](docs/EDITING.md#9-换首页大图)           |
+| 加一部番剧到评分表   | [docs/EDITING.md#11](docs/EDITING.md#11-加一部番剧到评分表) |
+| 发布到 GitHub Pages  | [docs/DEPLOY.md](docs/DEPLOY.md)                            |
+| 网站坏了想回滚       | [docs/DEPLOY.md#6](docs/DEPLOY.md#6-出错了怎么回滚)         |
 
 ---
 
@@ -45,7 +46,8 @@ npm run build
 
 ```
 content/          内容（Markdown）—— 你写的都在这里
-public/           图片、图标（原样发布）
+public/           图片、图标、数据（原样发布）
+  data/           番剧评分表数据 + 中译名对照表
 src/
   data/           站点配置 ← 站名、昵称、导航都在这
   styles/         设计令牌 ← 颜色、圆角、动效都在这
@@ -60,12 +62,25 @@ docs/             文档
 
 ---
 
+## 本地工具
+
+工具箱页（`/tools`）里有四个工具，**全在你自己浏览器里跑，不上传任何文件**：
+
+| 工具          | 干什么                                                |
+| ------------- | ----------------------------------------------------- |
+| 番剧评分表    | 加条目 → 自动算总分并排序 → 自动补封面年份            |
+| Markdown 阅读 | 拖 `.md` 进去，直接看排版效果                         |
+| Word 转 PDF   | 拖 `.docx` 进去，浏览器本地转成 PDF                   |
+| 图片压缩      | 任意图片 → 按预设裁切压成 WebP，直接拿去当封面/相册图 |
+
+---
+
 ## 常用命令
 
 | 命令                    | 作用                                              |
 | ----------------------- | ------------------------------------------------- |
 | `npm run dev`           | 本地预览，改文件自动刷新                          |
-| `npm run build`         | 构建到 `dist/`（含 RSS、sitemap、搜索索引）       |
+| `npm run build`         | 构建到 `dist/`（含 sitemap、搜索索引）            |
 | `npm run check`         | 全套检查：密钥 → 类型 → lint → 格式 → 构建 → 素材 |
 | `npm run format`        | 自动修复格式问题                                  |
 | `npm run new:post`      | 交互式新建文章                                    |
@@ -97,6 +112,7 @@ docs/             文档
 
 - 站上所有文章、收藏、相册目前都是**示例内容**（`sample: true`），渲染时带 SAMPLE 胶带标签。换成你自己的就删掉这个字段。
 - 插画的出处逐张登记在 [`public/art/CREDITS.md`](public/art/CREDITS.md)，并自动生成到站点 `/credits` 页。
+- 番剧评分表的 173 张封面来自 AniList 的作品条目，同样登记在 `CREDITS.md`（合并成一行）。
 - 素材均为个人非商业展示。**如果你是权利方**并希望某张图下架，请通过仓库 Issues 联系。
 
 ---
@@ -110,7 +126,7 @@ docs/             文档
 - `.githooks/pre-commit` 提交前自动拦截（用 `git config core.hooksPath .githooks` 激活）
 - CI 里独立一步再查一遍
 
-详见 [docs/EDITING.md#12](docs/EDITING.md#12-上传前的安全检查)。
+详见 [docs/EDITING.md#13](docs/EDITING.md#13-上传前的安全检查)。
 
 ---
 

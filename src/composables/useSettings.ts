@@ -12,8 +12,13 @@ export interface Settings {
   theme: ThemeName
   /** 减少动效总开关 */
   motion: 'on' | 'off'
-  /** 路由转场 */
-  transition: 'slide' | 'wipe'
+  /**
+   * 页面转场。
+   *   drift —— 默认。旧页面轻轻上浮淡出，新页面从下方浮起，
+   *            加上背景图的延续，翻页像掀过一张纸。
+   *   fade  —— 只淡入淡出，最安静。
+   */
+  transition: 'drift' | 'fade'
   /** 加载策略 */
   loading: 'minimal' | 'illustration' | 'off'
   /** 桌面鼠标光斑 */
@@ -33,7 +38,7 @@ export interface Settings {
 export const DEFAULTS: Settings = {
   theme: 'daylight',
   motion: 'on',
-  transition: 'slide',
+  transition: 'drift',
   loading: 'minimal',
   cursorGlow: true,
   customCursor: true,
@@ -50,7 +55,18 @@ function load(): Settings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { ...DEFAULTS }
-    return { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) }
+    const saved = JSON.parse(raw) as Partial<Settings> & { transition?: string }
+
+    /*
+     * 旧版本存的是 'slide' / 'wipe'（漫画分格已经删掉了）。
+     * 不迁移的话，老访客的 localStorage 里那个值会让转场名字对不上 CSS，
+     * 页面切换就变成"没有动画"——看起来像卡了一下。
+     */
+    if (saved.transition !== 'drift' && saved.transition !== 'fade') {
+      saved.transition = DEFAULTS.transition
+    }
+
+    return { ...DEFAULTS, ...saved }
   } catch {
     return { ...DEFAULTS }
   }

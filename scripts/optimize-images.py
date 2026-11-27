@@ -72,6 +72,28 @@ TASKS = [
     ("gallery-8.png", GALLERY / "window-afternoon.webp", 1200, 1400, "crop", 82),
 ]
 
+# ── 背景插画（16:10 横版，压在正文下面） ─────────────────────────────
+# 每篇文章 / 每个栏目 / 每个标签各挑一张，所以要多准备一些。
+# 原图在 raw/bg/bg-01.jpg ~ bg-44.jpg，只用其中挑出来的 24 张。
+# 背景会被模糊 + 压暗，所以不用给到 2400 宽，1600 就够，体积也小。
+BG_PICK = [
+    2, 3, 4, 6, 10, 12, 15, 16, 17, 19, 20, 21,
+    24, 25, 26, 29, 33, 34, 35, 37, 39, 41, 42, 43,
+]
+for _n in BG_PICK:
+    TASKS.append(
+        (
+            f"bg/bg-{_n:02d}.jpg",
+            ART / "bg" / f"bg-{_n:02d}.webp",
+            1600,
+            1000,
+            "crop",
+            # 背景在页面上会被模糊 + 压到很淡，质量给低一点完全看不出来，
+            # 但能让首屏少下载几百 KB。
+            58,
+        )
+    )
+
 # 体积上限（KB）。超了就自动降质量重压，最多试 3 次。
 LIMIT_KB = {
     "hero": 420,
@@ -79,6 +101,7 @@ LIMIT_KB = {
     "posts": 160,
     "favorites": 90,
     "gallery": 220,
+    "bg": 160,
 }
 
 
@@ -113,7 +136,6 @@ def get_limit(out: Path) -> int:
         return LIMIT_KB["posts"]
     return 200
 
-
 def process(src: Path, out: Path, tw: int, th: int, mode: str, quality: int) -> bool:
     if not src.exists():
         print(f"[图片] 跳过（没有原图）：{src.name}")
@@ -145,15 +167,17 @@ def process(src: Path, out: Path, tw: int, th: int, mode: str, quality: int) -> 
 
     # 压到预算内：不行就降质量
     q = quality
-    for attempt in range(4):
+    for attempt in range(8):
         resized.save(out, "WEBP", quality=q, method=6)
         size_kb = out.stat().st_size / 1024
-        if size_kb <= limit or q <= 60:
+        # 背景图本来就会被模糊 + 压淡，质量可以一路降到 40 也不难看
+        floor = 40 if out.parent.name == "bg" else 60
+        if size_kb <= limit or q <= floor:
             break
-        q -= 8
+        q -= 6
 
     size_kb = out.stat().st_size / 1024
-    flag = "" if size_kb <= limit else f"  ⚠ 超预算 {limit}KB"
+    flag = "" if size_kb <= limit else f"  ! 超预算 {limit}KB"
     print(f"[图片] {src.name:<38} → {out.name:<26} {tw}×{th}  {size_kb:>6.0f} KB{flag}")
     return True
 

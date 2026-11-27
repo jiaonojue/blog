@@ -97,18 +97,18 @@ const showChangelog = computed(() => props.open)
                 <button
                   type="button"
                   class="seg-btn"
-                  :class="{ active: settings.transition === 'slide' }"
-                  @click="settings.transition = 'slide'"
+                  :class="{ active: settings.transition === 'drift' }"
+                  @click="settings.transition = 'drift'"
                 >
-                  滑动
+                  翻页
                 </button>
                 <button
                   type="button"
                   class="seg-btn"
-                  :class="{ active: settings.transition === 'wipe' }"
-                  @click="settings.transition = 'wipe'"
+                  :class="{ active: settings.transition === 'fade' }"
+                  @click="settings.transition = 'fade'"
                 >
-                  漫画分格
+                  淡入
                 </button>
               </div>
             </div>

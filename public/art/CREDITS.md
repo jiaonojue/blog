@@ -18,6 +18,10 @@
 >
 > 本站目前所有插画均为 `C` 级：个人非商业展示，不提供转载或商用授权。
 > 如你是权利方且不希望作品出现在这里，请通过仓库 Issues 联系下架。
+>
+> **关于 `anime/` 目录**：番剧评分表里的 173 张封面来自 AniList 的作品条目，
+> 文件名就是 AniList 的作品 ID（例如 `14741.webp` → anilist.co/anime/14741）。
+> 数量太多，逐个列成 173 行会把这张表撑成一堵墙，所以合并成一行登记。
 
 | 文件名 | 作品名 | 作者 | 出处 | 许可 | 获取日期 | 级别 | 备注 |
 |---|---|---|---|---|---|---|---|
@@ -44,6 +48,31 @@
 | `../gallery/window-afternoon.webp` | 走廊光影 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7250237 | 仅个人展示 | 2026-11-25 | C | 原创插画 |
 | `favicon.svg` | 印章图标 | 本站自制 | — | 本站所有 | 2026-11-25 | A | 纯 SVG 手写，无外部素材 |
 | `og-default.jpg` | 分享卡片底图 | 本站自制 | — | 本站所有 | 2026-11-25 | A | 用 hero.webp 加工而成 |
+| `bg/bg-02.webp` | 草坡与云 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7338193 | 仅个人展示 | 2026-11-26 | C | 背景图，暖调草地 |
+| `bg/bg-03.webp` | 秋日小屋 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7320516 | 仅个人展示 | 2026-11-26 | C | 背景图，秋色 |
+| `bg/bg-04.webp` | 峡谷城堡 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7318491 | 仅个人展示 | 2026-11-26 | C | 背景图，暖橙奇幻 |
+| `bg/bg-06.webp` | 绿荫凉亭 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7345566 | 仅个人展示 | 2026-11-26 | C | 背景图，明亮绿调 |
+| `bg/bg-10.webp` | 夜里的木屋 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7298512 | 仅个人展示 | 2026-11-26 | C | 背景图，夜景暖灯 |
+| `bg/bg-12.webp` | 月下城堡 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7282335 | 仅个人展示 | 2026-11-26 | C | 背景图，暗紫奇幻 |
+| `bg/bg-15.webp` | 晴空天台 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7252723 | 仅个人展示 | 2026-11-26 | C | 背景图，蓝天都市 |
+| `bg/bg-16.webp` | 暮色城市 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7252407 | 仅个人展示 | 2026-11-26 | C | 背景图，深蓝夜景 |
+| `bg/bg-17.webp` | 湖畔秋林 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7320513 | 仅个人展示 | 2026-11-26 | C | 背景图，红叶倒影 |
+| `bg/bg-19.webp` | 玻璃拱廊 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7295065 | 仅个人展示 | 2026-11-26 | C | 背景图，冷绿建筑 |
+| `bg/bg-20.webp` | 层叠山丘 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7278664 | 仅个人展示 | 2026-11-26 | C | 背景图，清新绿 |
+| `bg/bg-21.webp` | 海边白屋 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7290228 | 仅个人展示 | 2026-11-26 | C | 背景图，夏日海岸 |
+| `bg/bg-24.webp` | 沿海公路 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7263845 | 仅个人展示 | 2026-11-26 | C | 背景图，晴空公路 |
+| `bg/bg-25.webp` | 空教室 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7309803 | 仅个人展示 | 2026-11-26 | C | 背景图，夕照教室 |
+| `bg/bg-26.webp` | 荒原落日 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7269808 | 仅个人展示 | 2026-11-26 | C | 背景图，暖橙黄昏 |
+| `bg/bg-29.webp` | 积云 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7315583 | 仅个人展示 | 2026-11-26 | C | 背景图，极简天空 |
+| `bg/bg-33.webp` | 猫耳房间 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7298553 | 仅个人展示 | 2026-11-26 | C | 背景图，室内暖调 |
+| `bg/bg-34.webp` | 紫藤庭院 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7296704 | 仅个人展示 | 2026-11-26 | C | 背景图，紫粉色调 |
+| `bg/bg-35.webp` | 林间石阶 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7260064 | 仅个人展示 | 2026-11-26 | C | 背景图，淡绿静谧 |
+| `bg/bg-37.webp` | 湖与远山 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7252393 | 仅个人展示 | 2026-11-26 | C | 背景图，开阔天空 |
+| `bg/bg-39.webp` | 紫色花田 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7269731 | 仅个人展示 | 2026-11-26 | C | 背景图，暮色花野 |
+| `bg/bg-41.webp` | 雪山热气球 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7269698 | 仅个人展示 | 2026-11-26 | C | 背景图，粉调清晨 |
+| `bg/bg-42.webp` | 拱桥夕照 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7269691 | 仅个人展示 | 2026-11-26 | C | 背景图，紫金黄昏 |
+| `bg/bg-43.webp` | 天空之城 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7094129 | 仅个人展示 | 2026-11-26 | C | 背景图，蓝绿奇幻 |
+| anime/14741.webp 等 173 张 | 番剧封面合集 | 各作品版权方 | https://anilist.co | 仅个人展示 | 2026-11-26 | C | 工具页「番剧评分表」用；经 AniList 取到的作品封面，文件名即 AniList 作品 ID |
 
 ---
 

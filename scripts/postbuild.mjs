@@ -2,11 +2,10 @@
  * 构建后处理脚本 —— vite-ssg 构建完成后自动运行。
  *
  * 【它做什么】
- *   1. 生成 RSS（dist/rss.xml）
- *   2. 生成 sitemap（dist/sitemap.xml）
- *   3. 生成 404.html（GitHub Pages 需要它来接住错误路由）
- *   4. 跑 Pagefind 建搜索索引
- *   5. 拷一份 .nojekyll（让 Pages 别把 _ 开头的目录当特殊文件）
+ *   1. 生成 sitemap（dist/sitemap.xml）
+ *   2. 生成 404.html（GitHub Pages 需要它来接住错误路由）
+ *   3. 跑 Pagefind 建搜索索引
+ *   4. 拷一份 .nojekyll（让 Pages 别把 _ 开头的目录当特殊文件）
  *
  * 你不用改这个文件。改内容、改配置就够了。
  */
@@ -31,7 +30,7 @@ const index = JSON.parse(readFileSync(join(GEN, 'content.json'), 'utf8'))
 const abs = (path) => `${site.url}${site.base.replace(/\/$/, '')}${path}`
 
 /* ─────────────────────────────────────────────────────────────
- * 1. RSS
+ * 1. sitemap（单个 sitemap，不用 index，个人站用不上分片）
  * ───────────────────────────────────────────────────────────── */
 function escapeXml(s) {
   return String(s)
@@ -42,44 +41,6 @@ function escapeXml(s) {
     .replace(/'/g, '&apos;')
 }
 
-function buildRss() {
-  const items = index.posts.slice(0, 20)
-  const now = new Date().toUTCString()
-
-  const entries = items
-    .map((post) => {
-      return `    <item>
-      <title>${escapeXml(post.title)}</title>
-      <link>${escapeXml(abs(post.path))}</link>
-      <guid isPermaLink="true">${escapeXml(abs(post.path))}</guid>
-      <pubDate>${new Date(`${post.date}T09:00:00Z`).toUTCString()}</pubDate>
-      <description>${escapeXml(post.summary)}</description>
-      <category>${escapeXml(post.category)}</category>
-    </item>`
-    })
-    .join('\n')
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>${escapeXml(site.title)}</title>
-    <link>${escapeXml(abs('/'))}</link>
-    <description>${escapeXml(site.description)}</description>
-    <language>zh-CN</language>
-    <lastBuildDate>${now}</lastBuildDate>
-    <atom:link href="${escapeXml(abs('/rss.xml'))}" rel="self" type="application/rss+xml"/>
-${entries}
-  </channel>
-</rss>
-`
-}
-
-writeFileSync(join(DIST, 'rss.xml'), buildRss(), 'utf8')
-console.log('[后处理] RSS 已生成')
-
-/* ─────────────────────────────────────────────────────────────
- * 2. sitemap（单个 sitemap，不用 index，个人站用不上分片）
- * ───────────────────────────────────────────────────────────── */
 function buildSitemap() {
   // 不含 credits / secret / 404
   const staticPaths = ['/', '/posts', '/favorites', '/gallery', '/about']

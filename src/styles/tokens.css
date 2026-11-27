@@ -21,7 +21,8 @@
   --t-fast: 160ms;
   --t-base: 240ms;
   --t-slow: 420ms;
-  --t-wipe: 500ms;
+  /* 页面转场时长。比别的动效长，才显得"顺"而不是"闪" */
+  --t-drift: 460ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
@@ -106,7 +107,7 @@
   --t-fast: 0ms;
   --t-base: 0ms;
   --t-slow: 0ms;
-  --t-wipe: 0ms;
+  --t-drift: 0ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -114,6 +115,6 @@
     --t-fast: 0ms;
     --t-base: 0ms;
     --t-slow: 0ms;
-    --t-wipe: 0ms;
+    --t-drift: 0ms;
   }
 }

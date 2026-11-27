@@ -25,13 +25,13 @@ flowchart TD
     subgraph 构建期["构建期（npm run build）"]
         IDX["build-content-index.mjs<br/>① 扫描 md，渲染 Markdown → HTML<br/>② 生成 content.json + bodies.json"]
         SSG["vite-ssg<br/>③ 每个路由渲染成真实 HTML"]
-        POST["postbuild.mjs<br/>④ RSS / sitemap / robots<br/>⑤ 404.html<br/>⑥ Pagefind 索引"]
+        POST["postbuild.mjs<br/>④ sitemap / robots<br/>⑤ 404.html<br/>⑥ Pagefind 索引"]
     end
 
     subgraph 产物["产物（dist/）"]
         HTML["每个页面一个 index.html"]
         ASSETS["assets/*.js · *.css · 图片"]
-        META["rss.xml · sitemap.xml · 404.html"]
+        META["sitemap.xml · 404.html"]
         PF["pagefind/<br/>搜索索引"]
     end
 
@@ -103,7 +103,6 @@ vite-ssg 输出完之后，再补几样它不管的东西：
 
 | 产物          | 作用                                                     |
 | ------------- | -------------------------------------------------------- |
-| `rss.xml`     | 订阅源，取最新 20 篇                                     |
 | `sitemap.xml` | 给搜索引擎的页面清单（不含 credits / secret / 404）      |
 | `robots.txt`  | 抓取规则，指向 sitemap                                   |
 | `404.html`    | GitHub Pages 用它接住错误路径                            |
@@ -209,6 +208,42 @@ flowchart TD
 
 ---
 
+## 本地工具（`/tools` 页）
+
+工具箱页面顶部有四个**纯浏览器端**工具。它们不经过构建流程，也不上传任何文件——
+只在你的浏览器里读写。
+
+```mermaid
+flowchart TD
+    subgraph 页面["Tools.vue · 标签切换"]
+        T1["番剧评分表"]
+        T2["Markdown 阅读"]
+        T3["Word 转 PDF"]
+        T4["图片压缩"]
+    end
+
+    T1 --> D1["public/data/anime.json<br/>已发布底表"]
+    T1 --> D2["localStorage<br/>anime:extra:v1<br/>你新加的条目"]
+    T1 --> D3["AniList GraphQL<br/>查封面 / 年份"]
+    D1 --> M["合并 + 按 score 排序"]
+    D2 --> M
+    M --> R["TransitionGroup FLIP<br/>让位动画"]
+
+    T2 --> F1["FileReader<br/>读 .md 文本"]
+    T3 --> F2["docx-preview<br/>renderAsync"]
+    T4 --> F3["createImageBitmap<br/>+ canvas.toBlob(webp)"]
+```
+
+**番剧评分表的排序模型**：总分 = 七项加权和 × 1000，权重写在 `AnimeTable.vue` 顶部的
+`W` 常量里。新增条目时立刻算分、插入数组、`TransitionGroup` 用 FLIP 让其余行动画让位。
+封面查询走 `anime-aliases.json`（中译名 → 罗马音）再打 AniList，因为 AniList
+不认简体中文标题。
+
+**为什么用 localStorage 而不是直接改 JSON**：浏览器里不能写仓库文件。
+localStorage 让「加一部」立刻可用，想公开时再点「导出 anime.json」覆盖提交。
+
+---
+
 ## 密钥防护
 
 ```mermaid
@@ -225,7 +260,7 @@ flowchart LR
 三层：`.gitignore` 挡文件、钩子挡提交、CI 挡部署。
 扫描器本身零依赖（纯 Node），扫 20+ 种真实密钥格式和危险文件名。
 
-详见 [EDITING.md 第 12 节](EDITING.md#12-上传前的安全检查)。
+详见 [EDITING.md 第 13 节](EDITING.md#13-上传前的安全检查)。
 
 ---
 
@@ -238,7 +273,6 @@ flowchart LR
 | 结构化数据                   | JSON-LD（WebSite + BlogPosting）       |
 | 分享卡片                     | 每类页面一张 OG 图（1200×630）         |
 | 站点地图                     | 构建时生成 `sitemap.xml`               |
-| RSS                          | 构建时生成 `rss.xml`                   |
 | 规范链接                     | 每页 `<link rel="canonical">`          |
 
 **预览环境不索引**：`robots.txt` 里 Disallow 了 `/credits` 和 `/secret`。
@@ -257,6 +291,7 @@ flowchart LR
 | Google Fonts              | 国内访问经常超时，字体自托管              |
 | 运行时 CSS-in-JS          | 静态站点不需要，多一层开销                |
 | 图片 CDN                  | GitHub Pages 自带，没必要                 |
+| xlsx 解析库               | 评分表改手工逐条维护，不需要整表导入      |
 
 ---
 

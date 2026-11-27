@@ -5,6 +5,89 @@
 
 ---
 
+## [0.2.0] — 2026-11-26
+
+按用户第二轮反馈做的一轮集中改造：删掉多余文案、给全站加背景插画、
+重做转场、补足动效、把工具箱做成四个真正能用的本地工具。
+
+### 新增
+
+**背景系统**
+
+- `useBackground.ts`：按「字符串哈希 → 取模」给每篇文章、每个栏目、每个标签
+  分配一张固定的背景插画。同一篇文章刷新多少次都是同一张（不是 `Math.random()`）
+- 24 张背景插画，转 WebP 存 `public/art/bg/`，逐张登记进 `CREDITS.md`
+- `PageBackdrop.vue`：低透明度 + 由底色到透明的渐变遮罩，正文压在上面依然清楚
+
+**动效**
+
+- 正文链接：静态樱粉下划线 + 悬停时墨色线从左向右画出（`scaleX`，不用 `text-decoration`）
+- 标题锚点：`h2` / `h3` 悬停时左侧浮出 `#`，窄屏隐藏
+- 表格行悬停底色、图片悬停轻微放大、引用块左侧渐变竖条
+- 代码块右上角「复制」按钮（`CodeCopy.vue`），两层剪贴板兜底
+- 导航胶囊悬停短横线、目录项悬停右移 2px、页脚链接画线
+- 番剧评分表：`TransitionGroup` FLIP 自动排序让位 + 新行樱粉闪烁
+
+**本地工具**（工具箱页，全部在浏览器里跑，不上传文件）
+
+- 番剧评分表：加条目（番名 + 七项分数）→ 自动算总分 → 按分数插入并播放让位动画
+  → 后台查 AniList 补封面和年份 → 存 localStorage；支持重查封面、删除、导出 JSON
+- Markdown 在线阅读器
+- Word 本地转 PDF（`docx-preview`）
+- 图片压缩（任意图片 → WebP，按预设裁切尺寸）
+
+**内容**
+
+- `content/posts/2026/how-to-add-post.md`：怎么在特定版块发文章
+- `content/posts/2026/ipv6-disabledcomponents.md`：IPv6 的 DisabledComponents 注册表项
+- `public/data/anime-aliases.json`：100+ 条中译名 → 罗马音对照表，
+  解决 AniList 不认简体中文番名、查不到封面/年份的问题
+
+**文档**
+
+- `docs/EDITING.md` 新增第 11 节「加一部番剧到评分表」，含总分公式、导出流程、
+  `anime.json` 字段表、`anime-aliases.json` 用法
+- `docs/EDITING.md` 补 `closing` / `notes` 两个 frontmatter 字段说明
+- `docs/EDITING.md` 补四个本地工具的用途表
+
+### 变更
+
+- 番剧评分表**不再支持导入 xlsx**。评分表是手工逐条维护的，
+  重新导入整表会覆盖掉手工修正，改成「加条目」模式
+- 转场去掉漫画分格，改为平滑的横向漂移 + 淡入，保留与上一页的视觉延续
+- 删除 RSS（页脚链接、构建产物、文档引用一并清掉）
+- 去掉页脚和关于页的 `@jiaonojue` 标识
+- 删除关于页那句气泡文案、精简搜索栏教程文案
+- `eslint.config.js` 忽略 `tmp/`、`raw/`、`验收截图/`（一次性脚本不参与质量门）
+
+### 修复
+
+- **关于页的自我介绍正文一直没显示**：`content/about.md` 里第二个 `---`
+  之后的正文被构建脚本渲染进了 `about.html`，但 `About.vue` 的模板从头到尾没有引用它——
+  文档里写着"正文会显示在页面上"，实际页面上只有插画、问答和时间线。
+  现在正文排在插画右侧（窄屏时在下方），关于页上半部分不再是左图右空
+- **关于页插画在平板宽度下撑成整行巨图**：堆叠布局下 `.about-illustration`
+  继承了 `width: 100%`，768px 屏幕上变成 690×690。加 `max-width: 440px` 封顶
+- **番剧评分表 101 部没有封面**：AniList 对简体中文名命中率约 50%。
+  用 GraphQL aliases 批量查询（每批 18–20 条）+ 离线中译名对照表补齐，
+  现在 **173/173 全部有本地封面**，共 2.1 MB
+- **`CodeCopy.vue` 在 SSG 预渲染时报 `document is not defined`**：
+  `watch` 原本是 `immediate: true`，服务端渲染时就执行了 DOM 查询。
+  改为 `onMounted` + `attach()` 内部 `typeof document === 'undefined'` 双重兜底
+- **新加的行高亮不消失**：`transition: background-color` 对新创建的元素无效
+  （没有"前一个颜色"可过渡）。改用 `animation` + `@keyframes ... forwards`
+- **`ImageCompressor.vue` 裁切分支算出的宽高没被用**：变量赋值后立刻被画布尺寸覆盖，
+  删掉无用计算
+
+### 已知限制
+
+- 新加的番剧条目只存在浏览器 localStorage 里，要让所有人看到需要点「导出 anime.json」
+  并覆盖提交（文档里写了这一步，但容易忘）
+- AniList 查封面有速率限制，连续加很多部时可能查不到，需要点「重查」
+- 示例内容 28 项仍为占位，需用户替换
+
+---
+
 ## [0.1.0] — 2026-11-26
 
 首个完整版本。从空目录到可以上线的静态博客。
@@ -68,7 +151,7 @@
 - 每页独立 title / description / canonical
 - JSON-LD 结构化数据（WebSite + BlogPosting）
 - OG 分享卡片（默认 / 文章 / 收藏三套）
-- 构建时生成 RSS、sitemap、robots.txt
+- 构建时生成 sitemap、robots.txt
 
 **安全**
 

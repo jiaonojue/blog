@@ -25,12 +25,53 @@
   font-size: clamp(1.4rem, 2.6vw, 1.75rem);
   border-bottom: 1px solid var(--line);
   scroll-margin-top: 96px;
+  /* 标题本身要能挂住锚点按钮 */
+  position: relative;
 }
 
 .prose h3 {
   margin-top: 1.9em;
   font-size: 1.18rem;
   scroll-margin-top: 96px;
+  position: relative;
+}
+
+/*
+ * 标题旁边的锚点：鼠标移到标题上才浮出来。
+ * 用 ::after 而不是真链接，所以不需要给每个标题加 DOM；
+ * 点击由 PostDetail 里的一小段脚本接管（复制链接 / 跳转）。
+ * 纯装饰，读屏软件不会念到，键盘用户走侧边目录。
+ */
+.prose h2::after,
+.prose h3::after {
+  content: '#';
+  position: absolute;
+  left: -1.1em;
+  top: 50%;
+  transform: translateY(-50%) scale(0.85);
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  font-weight: 400;
+  color: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
+}
+
+.prose h2:hover::after,
+.prose h3:hover::after {
+  opacity: 0.55;
+  transform: translateY(-50%) scale(1);
+}
+
+/* 窄屏没有左边留白，锚点会跑到屏幕外，干脆不显示 */
+@media (max-width: 767px) {
+  .prose h2::after,
+  .prose h3::after {
+    display: none;
+  }
 }
 
 .prose h4 {
@@ -49,15 +90,50 @@
 
 .prose a {
   color: var(--ink);
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
-  transition: text-decoration-color var(--t-fast) var(--ease-out);
+  text-decoration: none;
+  position: relative;
+  /* 底下那条樱粉的基线，始终在 */
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 2px;
+  padding-bottom: 1px;
 }
 
-.prose a:hover {
-  text-decoration-color: var(--ink);
+/*
+ * 悬停时从左侧"画"一条墨色线盖在樱粉线上。
+ *
+ * 【为什么不用 text-decoration】
+ *   text-decoration 无法做"从左到右生长"这种过渡。
+ *   伪元素 + scaleX 是唯一能干净做到这件事的写法，
+ *   而且不影响文字基线、不和两端对齐打架。
+ */
+.prose a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+.prose a:hover::after {
+  transform: scaleX(1);
+}
+
+/* 减少动效：线直接是墨色，不做绘制 */
+@media (prefers-reduced-motion: reduce) {
+  .prose a::after {
+    transition: none;
+  }
+}
+
+[data-motion='off'] .prose a::after {
+  transition: none;
 }
 
 .prose ul,
@@ -172,6 +248,12 @@
   padding: 0.6em 0.9em;
   border-bottom: 1px solid var(--line);
   text-align: left;
+  transition: background-color var(--t-fast) var(--ease-out);
+}
+
+/* 行悬停：扫读宽表格时不会串行 */
+.prose tbody tr:hover td {
+  background: var(--bg-soft);
 }
 
 .prose th {
@@ -185,6 +267,22 @@
   margin: 1.8em auto;
   border-radius: var(--r-input);
   border: 1px solid var(--line);
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+/* 图片悬停轻微放大，暗示"可以点开看" */
+.prose img:hover {
+  transform: scale(1.006);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prose img:hover {
+    transform: none;
+  }
+}
+
+[data-motion='off'] .prose img:hover {
+  transform: none;
 }
 
 .prose figure {
@@ -196,4 +294,37 @@
   text-align: center;
   font-size: 13px;
   color: var(--ink-soft);
+}
+
+/* ── 引用块：左侧竖线用渐变做出"墨色渐淡"的感觉 ────────── */
+.prose blockquote {
+  position: relative;
+}
+
+.prose blockquote::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 12%;
+  bottom: 12%;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to bottom,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 25%, transparent)
+  );
+}
+
+/* 打印时所有悬停效果都关掉 */
+@media print {
+  .prose a::after,
+  .prose h2::after,
+  .prose h3::after {
+    display: none;
+  }
+
+  .prose img:hover {
+    transform: none;
+  }
 }

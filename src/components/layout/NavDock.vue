@@ -150,6 +150,7 @@ const currentTheme = computed(
 
 .dock-link {
   display: block;
+  position: relative;
   padding: 8px 14px;
   border-radius: var(--r-pill);
   font-size: 14px;
@@ -158,6 +159,44 @@ const currentTheme = computed(
   transition:
     color var(--t-fast) var(--ease-out),
     background-color var(--t-fast) var(--ease-out);
+}
+
+/*
+ * 悬停时字底下长出一条短横线。
+ * 整块换底色留给"当前页面"，悬停只加这一笔，
+ * 两个状态才分得清。
+ */
+.dock-link::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 12px;
+  height: 2px;
+  margin-left: -6px;
+  border-radius: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+.dock-link:hover::before {
+  transform: scaleX(1);
+}
+
+/* 当前页已经有实心底色，不再叠一条线 */
+.dock-link.router-link-exact-active::before {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-link::before {
+    transition: none;
+  }
+}
+
+[data-motion='off'] .dock-link::before {
+  transition: none;
 }
 
 .dock-link:hover {

@@ -15,6 +15,10 @@ export interface Post {
   tags: string[]
   summary: string
   cover?: string
+  /** 文章末尾「余白」那一屏的收尾语；不写就用默认那句 */
+  closing?: string
+  /** 页边批注：挂在前几段旁边的小字，可选 */
+  notes?: { after: number; text: string }[]
   draft: boolean
   sample: boolean
   /** 预计阅读时长（分钟） */

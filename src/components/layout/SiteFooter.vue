@@ -37,14 +37,13 @@ const footerLinks = computed(() =>
       <div class="footer-body">
         <div class="footer-brand">
           <SiteMark :size="22" :framed="false" />
-          <p class="footer-copy">{{ copyright }} {{ site.handle }}</p>
+          <p class="footer-copy">{{ copyright }} {{ site.title }}</p>
         </div>
 
         <nav class="footer-links" aria-label="页脚导航">
           <RouterLink v-for="item in footerLinks" :key="item.key" :to="item.path">
             {{ item.label }}
           </RouterLink>
-          <a :href="`${site.base}rss.xml`">RSS</a>
         </nav>
       </div>
 
@@ -58,6 +57,9 @@ const footerLinks = computed(() =>
 .site-footer {
   margin-top: 96px;
   padding-bottom: 48px;
+  /* 背景插画层是 position: fixed，页脚要抬到它上面 */
+  position: relative;
+  z-index: var(--z-content);
 }
 
 /* 移动端底部 Dock 会盖住页脚，多留空间 */
@@ -104,7 +106,36 @@ const footerLinks = computed(() =>
 }
 
 .footer-links a {
+  position: relative;
   transition: color var(--t-fast) var(--ease-out);
+}
+
+/* 悬停：一条从左侧画过来的细线，和正文链接同一个语言 */
+.footer-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+.footer-links a:hover::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-links a::after {
+    transition: none;
+  }
+}
+
+[data-motion='off'] .footer-links a::after {
+  transition: none;
 }
 
 .footer-links a:hover {

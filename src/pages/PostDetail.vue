@@ -16,6 +16,11 @@ import TocSidebar from '@/components/content/TocSidebar.vue'
 import TapeLabel from '@/components/ui/TapeLabel.vue'
 import WashiDivider from '@/components/ui/WashiDivider.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import OpenBook from '@/components/content/OpenBook.vue'
+import PageTabs from '@/components/content/PageTabs.vue'
+import Colophon from '@/components/content/Colophon.vue'
+import MarginNotes from '@/components/content/MarginNotes.vue'
+import CodeCopy from '@/components/content/CodeCopy.vue'
 
 const props = defineProps<{ year: string; slug: string }>()
 const route = useRoute()
@@ -158,9 +163,15 @@ onUnmounted(() => {
     </EmptyState>
 
     <template v-else>
+      <!-- 开卷：第一次进入这篇时，屏幕中央短暂浮出书名页 -->
+      <OpenBook :title="post.title" :category="post.category" :page="pageNo" :path="post.path" />
+
       <div class="post-layout">
         <!-- ══ 正文列 ══════════════════════════════════════ -->
         <article class="post-article">
+          <!-- 页签：贴在右上角的两枚书签，随时能跳上一篇 / 下一篇 -->
+          <PageTabs :prev="nav.prev" :next="nav.next" />
+
           <header class="post-head">
             <BackButton />
 
@@ -198,13 +209,24 @@ onUnmounted(() => {
           </figure>
 
           <!-- 正文：HTML 由构建脚本生成，可信来源，故用 v-html -->
-          <div v-if="loading" class="post-loading" aria-hidden="true">
-            <span class="loading-bar" />
-            <span class="loading-bar" />
-            <span class="loading-bar short" />
+          <div class="prose-wrap">
+            <div v-if="loading" class="post-loading" aria-hidden="true">
+              <span class="loading-bar" />
+              <span class="loading-bar" />
+              <span class="loading-bar short" />
+            </div>
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div v-else id="post-body" class="prose" v-html="bodyHtml" />
+
+            <!--
+              页边批注：挂在正文右侧的空白里，不占排版宽度。
+              内容来自 frontmatter 的 notes 字段，没写就不出现。
+            -->
+            <MarginNotes v-if="!loading" :notes="post.notes ?? []" target="#post-body" />
+
+            <!-- 代码块右上角的「复制」按钮：脚本挂上去，不占正文结构 -->
+            <CodeCopy v-if="!loading" target="#post-body" />
           </div>
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <div v-else class="prose" v-html="bodyHtml" />
 
           <!--
             文末的「本页完」：既是收尾，也是既読的触发点。
@@ -215,6 +237,9 @@ onUnmounted(() => {
             <span class="end-word">本页完</span>
             <span class="end-rule" aria-hidden="true" />
           </div>
+
+          <!-- 余白：读完之后的空白页，一句话就够 -->
+          <Colophon :closing="post.closing" />
 
           <!--
             页码角标：钉在正文列右下角，像实体书页脚。
@@ -462,6 +487,14 @@ onUnmounted(() => {
 }
 
 /* ── 正文加载占位（不是占位图，是加载态） ───────────────── */
+/*
+ * 批注层要相对正文定位，所以外面套一层 relative 容器。
+ * 容器宽度就是正文宽度，批注用 left: calc(100% + 20px) 伸到右边留白里。
+ */
+.prose-wrap {
+  position: relative;
+}
+
 .post-loading {
   display: grid;
   gap: 12px;

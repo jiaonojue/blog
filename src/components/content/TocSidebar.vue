@@ -94,17 +94,30 @@ function jumpTo(id: string, event: MouseEvent) {
   margin-left: -17px;
   transition:
     color var(--t-fast) var(--ease-out),
-    border-color var(--t-fast) var(--ease-out);
+    border-color var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
 }
 
+/* 悬停时向右轻推 2px，像是在"往正文里探一下" */
 .toc a:hover {
   color: var(--ink);
+  transform: translateX(2px);
 }
 
 .toc a.active {
   color: var(--accent);
   border-left-color: var(--accent);
   font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toc a:hover {
+    transform: none;
+  }
+}
+
+[data-motion='off'] .toc a:hover {
+  transform: none;
 }
 
 .lvl-3 a {

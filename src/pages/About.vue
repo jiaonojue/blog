@@ -4,7 +4,6 @@ import { about, withBase } from '@/composables/useContent'
 import { useSeo } from '@/composables/useSeo'
 import { site } from '@/data/site.config'
 import { settings } from '@/composables/useSettings'
-import SpeechBubble from '@/components/ui/SpeechBubble.vue'
 import TapeLabel from '@/components/ui/TapeLabel.vue'
 import SiteMark from '@/components/ui/SiteMark.vue'
 import WashiDivider from '@/components/ui/WashiDivider.vue'
@@ -20,9 +19,6 @@ function toggle(i: number) {
   openIndex.value = openIndex.value === i ? -1 : i
 }
 
-/** 气泡文案：站主对访客说的话，不是角色台词 */
-const bubbleText = '欢迎随便看看。这里没有评论区，也不用留联系方式——看到喜欢的就当是我们的默契。'
-
 const showIllustration = computed(
   () => site.features.aboutIllustration && settings.value.aboutIllustration,
 )
@@ -35,24 +31,21 @@ const showIllustration = computed(
       <h1 class="page-title t-display">关于</h1>
     </header>
 
-    <!-- ══ 上：插画 + 站主的话 ════════════════════════════ -->
-    <section class="about-top">
+    <!-- ══ 上：插画 + 自我介绍正文 ══════════════════════════ -->
+    <section class="about-top" :class="{ 'no-illustration': !showIllustration }">
       <div v-if="showIllustration" class="about-illustration">
         <img
           :src="aboutUrl"
           alt="一张关于页插画"
           width="1200"
           height="1200"
-          loading="lazy"
+          loading="eager"
           decoding="async"
         />
       </div>
 
-      <div class="about-speech">
-        <SpeechBubble tail="left">
-          {{ bubbleText }}
-        </SpeechBubble>
-      </div>
+      <!-- 正文来自 content/about.md 里 frontmatter 之后的部分 -->
+      <div v-if="about.html" class="about-intro prose" v-html="about.html" />
     </section>
 
     <WashiDivider label="profile" />
@@ -110,7 +103,6 @@ const showIllustration = computed(
 
     <p class="about-sign">
       <SiteMark :size="22" :framed="false" />
-      <span>{{ site.handle }}</span>
     </p>
   </div>
 </template>
@@ -128,18 +120,28 @@ const showIllustration = computed(
   margin-top: 12px;
 }
 
-/* ── 上部：插画 + 气泡 ─────────────────────────────────── */
+/* ── 上部：插画 + 正文 ──────────────────────────────────── */
 .about-top {
   display: grid;
-  grid-template-columns: minmax(0, 420px) 1fr;
-  gap: 40px;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: 56px;
   align-items: center;
+}
+
+/* 关掉插画时正文独占一行，不要留一个空栏 */
+.about-top.no-illustration {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 @media (max-width: 899px) {
   .about-top {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+
+  /* 堆叠之后插画会撑满整行，平板宽度下大得离谱，给个上限 */
+  .about-illustration {
+    max-width: 440px;
   }
 }
 
@@ -151,14 +153,19 @@ const showIllustration = computed(
 }
 
 .about-illustration img {
+  display: block;
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
 }
 
-/* 气泡锚在画面边缘，不指向画面内的人 */
-.about-speech {
-  padding-bottom: 8px;
+/* 正文第一段不需要顶部空隙，否则和插画对不齐 */
+.about-intro > :first-child {
+  margin-top: 0;
+}
+
+.about-intro > :last-child {
+  margin-bottom: 0;
 }
 
 /* ── 下部两栏 ───────────────────────────────────────────── */

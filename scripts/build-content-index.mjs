@@ -171,6 +171,14 @@ async function loadPosts() {
         tags: Array.isArray(data.tags) ? data.tags : [],
         summary: data.summary,
         cover: data.cover || undefined,
+        // 文章末尾「余白」那一句。写了就用，没写让组件用默认文案
+        closing: data.closing ? String(data.closing).trim() : undefined,
+        // 页边批注：只保留 after 是正整数的条目，写错了就当没写
+        notes: Array.isArray(data.notes)
+          ? data.notes
+              .filter((n) => n && Number.isInteger(n.after) && n.after > 0 && n.text)
+              .map((n) => ({ after: n.after, text: String(n.text).trim() }))
+          : undefined,
         draft: data.draft === true,
         sample: data.sample === true,
         minutes: readingMinutes(content),

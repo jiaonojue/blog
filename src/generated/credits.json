@@ -228,5 +228,255 @@
     "date": "2026-11-25",
     "level": "A",
     "note": "用 hero.webp 加工而成"
+  },
+  {
+    "file": "bg/bg-02.webp",
+    "title": "草坡与云",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7338193",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，暖调草地"
+  },
+  {
+    "file": "bg/bg-03.webp",
+    "title": "秋日小屋",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7320516",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，秋色"
+  },
+  {
+    "file": "bg/bg-04.webp",
+    "title": "峡谷城堡",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7318491",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，暖橙奇幻"
+  },
+  {
+    "file": "bg/bg-06.webp",
+    "title": "绿荫凉亭",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7345566",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，明亮绿调"
+  },
+  {
+    "file": "bg/bg-10.webp",
+    "title": "夜里的木屋",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7298512",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，夜景暖灯"
+  },
+  {
+    "file": "bg/bg-12.webp",
+    "title": "月下城堡",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7282335",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，暗紫奇幻"
+  },
+  {
+    "file": "bg/bg-15.webp",
+    "title": "晴空天台",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7252723",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，蓝天都市"
+  },
+  {
+    "file": "bg/bg-16.webp",
+    "title": "暮色城市",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7252407",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，深蓝夜景"
+  },
+  {
+    "file": "bg/bg-17.webp",
+    "title": "湖畔秋林",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7320513",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，红叶倒影"
+  },
+  {
+    "file": "bg/bg-19.webp",
+    "title": "玻璃拱廊",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7295065",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，冷绿建筑"
+  },
+  {
+    "file": "bg/bg-20.webp",
+    "title": "层叠山丘",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7278664",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，清新绿"
+  },
+  {
+    "file": "bg/bg-21.webp",
+    "title": "海边白屋",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7290228",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，夏日海岸"
+  },
+  {
+    "file": "bg/bg-24.webp",
+    "title": "沿海公路",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7263845",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，晴空公路"
+  },
+  {
+    "file": "bg/bg-25.webp",
+    "title": "空教室",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7309803",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，夕照教室"
+  },
+  {
+    "file": "bg/bg-26.webp",
+    "title": "荒原落日",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7269808",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，暖橙黄昏"
+  },
+  {
+    "file": "bg/bg-29.webp",
+    "title": "积云",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7315583",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，极简天空"
+  },
+  {
+    "file": "bg/bg-33.webp",
+    "title": "猫耳房间",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7298553",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，室内暖调"
+  },
+  {
+    "file": "bg/bg-34.webp",
+    "title": "紫藤庭院",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7296704",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，紫粉色调"
+  },
+  {
+    "file": "bg/bg-35.webp",
+    "title": "林间石阶",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7260064",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，淡绿静谧"
+  },
+  {
+    "file": "bg/bg-37.webp",
+    "title": "湖与远山",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7252393",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，开阔天空"
+  },
+  {
+    "file": "bg/bg-39.webp",
+    "title": "紫色花田",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7269731",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，暮色花野"
+  },
+  {
+    "file": "bg/bg-41.webp",
+    "title": "雪山热气球",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7269698",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，粉调清晨"
+  },
+  {
+    "file": "bg/bg-42.webp",
+    "title": "拱桥夕照",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7269691",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，紫金黄昏"
+  },
+  {
+    "file": "bg/bg-43.webp",
+    "title": "天空之城",
+    "author": "未标注",
+    "source": "https://safebooru.org/index.php?page=post&s=view&id=7094129",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "背景图，蓝绿奇幻"
+  },
+  {
+    "file": "anime/14741.webp 等 173 张",
+    "title": "番剧封面合集",
+    "author": "各作品版权方",
+    "source": "https://anilist.co",
+    "license": "仅个人展示",
+    "date": "2026-11-26",
+    "level": "C",
+    "note": "工具页「番剧评分表」用；经 AniList 取到的作品封面，文件名即 AniList 作品 ID"
   }
 ]

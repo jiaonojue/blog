@@ -224,15 +224,12 @@ defineExpose({ show })
             <div v-if="!hasQuery" class="finder-hint">
               <p class="hint-lead">直接打字就行。</p>
               <p class="hint-sub">
-                站点全文搜索跑在你的浏览器里，没有请求发到任何服务器。
-                <br />
-                按
                 <kbd>/</kbd>
                 或
                 <kbd>Ctrl</kbd>
                 +
                 <kbd>K</kbd>
-                随时打开，
+                打开，
                 <kbd>Esc</kbd>
                 关闭。
               </p>

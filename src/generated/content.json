@@ -1,6 +1,52 @@
 {
   "posts": [
     {
+      "title": "备忘：IPv6 连不上时，除了网卡还要改注册表",
+      "date": "2026-11-26",
+      "slug": "ipv6-disabledcomponents",
+      "year": "2026",
+      "category": "fragment",
+      "tags": [
+        "备忘录",
+        "网络",
+        "Windows"
+      ],
+      "summary": "Windows 上 IPv6 明明开了却连不上，最常见的原因不是网卡设置，而是注册表里 DisabledComponents 被某个\"优化工具\"改成了非零值。这篇记一下怎么查、怎么改回 0。",
+      "closing": "系统的默认值有它的道理，别轻易相信\"一键优化\"。",
+      "draft": false,
+      "sample": true,
+      "minutes": 2,
+      "path": "/posts/2026/ipv6-disabledcomponents"
+    },
+    {
+      "title": "怎么往这个站加一篇文章",
+      "date": "2026-11-26",
+      "slug": "how-to-add-post",
+      "year": "2026",
+      "category": "tech",
+      "tags": [
+        "教程",
+        "写作",
+        "维护"
+      ],
+      "summary": "从\"新建一个 md 文件\"到\"网页上能看到\"，中间只有一步。这篇把四个版块的区别、frontmatter 每个字段的意思、以及最容易出错的地方都写清楚。",
+      "closing": "加文章这件事，应该比写文章更省事。",
+      "notes": [
+        {
+          "after": 1,
+          "text": "只有这一步是必须的"
+        },
+        {
+          "after": 5,
+          "text": "这个字段决定文章进哪个版块"
+        }
+      ],
+      "draft": false,
+      "sample": true,
+      "minutes": 3,
+      "path": "/posts/2026/how-to-add-post"
+    },
+    {
       "title": "备忘：几个让我少走弯路的命令行",
       "date": "2026-11-24",
       "slug": "cli-notes",
@@ -48,6 +94,21 @@
       ],
       "summary": "一个活一千年的精灵，用几十年的时间去理解一个只陪了她十年的勇者。这部的温柔不在于它不悲伤，而在于它承认悲伤来得太晚。",
       "cover": "/art/posts/frieren.webp",
+      "closing": "它没有教你怎么不后悔，只是让你承认后悔存在过。",
+      "notes": [
+        {
+          "after": 2,
+          "text": "这句话我抄在本子上了"
+        },
+        {
+          "after": 5,
+          "text": "停顿比台词更像对话"
+        },
+        {
+          "after": 7,
+          "text": "「时间还很多」是最大的错觉"
+        }
+      ],
       "draft": false,
       "sample": true,
       "minutes": 2,
