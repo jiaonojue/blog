@@ -16,7 +16,6 @@ import TocSidebar from '@/components/content/TocSidebar.vue'
 import TapeLabel from '@/components/ui/TapeLabel.vue'
 import WashiDivider from '@/components/ui/WashiDivider.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import PageTabs from '@/components/content/PageTabs.vue'
 import Colophon from '@/components/content/Colophon.vue'
 import MarginNotes from '@/components/content/MarginNotes.vue'
 import CodeCopy from '@/components/content/CodeCopy.vue'
@@ -165,9 +164,6 @@ onUnmounted(() => {
       <div class="post-layout">
         <!-- ══ 正文列 ══════════════════════════════════════ -->
         <article class="post-article">
-          <!-- 页签：贴在右上角的两枚书签，随时能跳上一篇 / 下一篇 -->
-          <PageTabs :prev="nav.prev" :next="nav.next" />
-
           <header class="post-head">
             <BackButton />
 
