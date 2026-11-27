@@ -15,13 +15,15 @@
   4. 输出到 public/fonts/
 
 【什么时候跑】
-  npm run dev / npm run build 会自动跑。
-  也可以单独跑：npm run fonts
+  手动跑：npm run fonts
+  dev / build **不会**自动跑它 —— 这是有意的：
+  字体只在你改了文案、加了新字之后才需要重新裁一次，
+  每次启动都扫一遍全项目、再调 fonttools 会白白多等十几秒。
 
-【加了新文章之后】
-  如果新文章里出现了以前没写过的字，那个字会显示成"后备字体"的样子
+【加了新文章 / 改了 UI 文案之后】
+  如果出现了以前没写过的字，那个字会显示成"后备字体"的样子
   （通常是系统默认黑体），和标题的手写体不一致。
-  跑一次 npm run fonts 就好，或者直接 npm run build（会自动跑）。
+  跑一次 npm run fonts 就好。
 
 【注意】
   这个脚本需要 Python 的 fonttools 和 brotli：
@@ -53,7 +55,7 @@ FONTS = [
     (
         ROOT / "node_modules/@fontsource/lxgw-wenkai/files/lxgw-wenkai-latin-500-normal.woff2",
         "lxgw-wenkai-subset.woff2",
-        300,  # 霞鹜文楷：引文用。它的字形比站酷多，压不到更小
+        340,  # 霞鹜文楷：引文用。它的字形比站酷多，压不到更小
     ),
     (
         ROOT / "node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-400-normal.woff2",

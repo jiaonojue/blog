@@ -15,6 +15,61 @@ html {
    * 如果 body 自己刷一层 --bg，背景图就被盖死了。
    */
   background: var(--bg);
+
+  /*
+   * 换纸的时候不要"啪"一下。
+   *
+   * 【这一行是整站配色过渡的总开关】
+   *   tokens.css 里用 @property 把 --bg / --ink / --line 这些变量
+   *   登记成了"颜色"类型，颜色类型之间浏览器可以插值。
+   *   变量在 <html> 上被换掉（切主题、进出摸鱼分区），
+   *   这条 transition 就让新值在 520ms 里慢慢走过来。
+   *   整站所有用到这些变量的地方会一起淡过去，不需要每个组件各写一遍。
+   *
+   * 【为什么 transition 写的是变量名，不是 background-color】
+   *   直接 transition background-color 也能动，但只有 html 自己这一层在动；
+   *   卡片、导航、描边用的是各自元素的 var(--surface) / var(--line)，
+   *   它们不共享同一条 transition。而变量是继承的——
+   *   只要 html 上的变量在插值，整棵树每时每刻拿到的都是中间值，
+   *   于是全站一起淡过去。这是唯一"写一处、全站生效"的办法。
+   *
+   * 【为什么是 520ms】
+   *   比常规动效（240ms）长一倍。换纸是"整页级别"的变化，
+   *   太快像闪了一下，太慢（800ms 以上）会让人以为卡住了。
+   *   520ms 刚好够看清"在变"，又不会耽误操作。
+   *
+   * 【为什么不支持 @property 的浏览器会瞬间切换】
+   *   那些浏览器里这些变量不是颜色类型，transition 对它们无效，
+   *   行为退回原来的瞬间切换——不会坏，只是没有这段过渡。
+   */
+  transition:
+    --bg 520ms var(--ease-in-out),
+    --bg-soft 520ms var(--ease-in-out),
+    --surface 520ms var(--ease-in-out),
+    --ink 520ms var(--ease-in-out),
+    --ink-soft 520ms var(--ease-in-out),
+    --line 520ms var(--ease-in-out),
+    --accent 520ms var(--ease-in-out),
+    --accent-soft 520ms var(--ease-in-out),
+    --stamp-ink 520ms var(--ease-in-out),
+    --veil-to 520ms var(--ease-in-out),
+    --glow-color 520ms var(--ease-in-out),
+    background-color 520ms var(--ease-in-out);
+}
+
+/*
+ * 动效关掉时不要这段过渡。
+ * 这一条必须写在 html 上，而且要用 !important 之外的普通优先级 ——
+ * 上面那条就在同一个选择器里，靠"后写的赢"覆盖。
+ */
+[data-motion='off'] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    transition: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

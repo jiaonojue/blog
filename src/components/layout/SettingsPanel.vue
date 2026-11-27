@@ -34,7 +34,7 @@ function toggleNav(key: string) {
     : [...hidden, key]
 }
 
-const version = '0.1.0'
+const version = '0.3.0'
 const showChangelog = computed(() => props.open)
 </script>
 

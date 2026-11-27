@@ -108,6 +108,35 @@ function readingMinutes(text) {
   return Math.max(1, Math.round(chinese / 400 + words / 200))
 }
 
+/**
+ * 数正文的"字数"和"小节数"，给文章页的奥付卡片用。
+ *
+ * 字数：去掉标签后的非空白字符数。代码块（<pre>）不算——
+ *       一行 `npm run build` 只有十来个字符，却占了半屏，
+ *       算进"字数"会让技术文章的篇幅虚高。
+ * 小节：二级标题（##）的个数，对应奥付里的"小节"。
+ *
+ * 两个数字都在构建期算好写进 JSON，所以预渲染出来的 HTML 里
+ * 直接就是真值，不会出现"先显示 0 再跳成 1832"的水合闪烁。
+ */
+function measureBody(html) {
+  const withoutCode = html.replace(/<pre\b[\s\S]*?<\/pre>/gi, ' ')
+  const chars = withoutCode
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, '')
+    .trim().length
+
+  const sections = (html.match(/<h2\b/g) ?? []).length
+  return { chars, sections }
+}
+
 function readDirSafe(dir) {
   if (!existsSync(dir)) return []
   return readdirSync(dir, { withFileTypes: true })
@@ -159,7 +188,9 @@ async function loadPosts() {
       const slug = data.slug || basename(entry.name, '.md')
       const path = `/posts/${yearDir.name}/${slug}`
 
-      bodies[path] = await md.renderAsync(content)
+      const html = await md.renderAsync(content)
+      bodies[path] = html
+      const { chars, sections } = measureBody(html)
 
       posts.push({
         title: data.title,
@@ -182,6 +213,9 @@ async function loadPosts() {
         draft: data.draft === true,
         sample: data.sample === true,
         minutes: readingMinutes(content),
+        // 奥付卡片用的两个真值，见上面的 measureBody()
+        chars,
+        sections,
         path,
       })
     }

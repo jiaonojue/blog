@@ -1,6 +1,6 @@
 {
   "name": "blog",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "个人博客：番剧感想、技术备忘与随笔",
@@ -22,6 +22,8 @@
     "check:assets": "node scripts/check-assets.mjs",
     "images": "node scripts/run-py.mjs scripts/optimize-images.py",
     "fonts": "node scripts/run-py.mjs scripts/subset-font.py",
+    "novel": "node scripts/build-novel.mjs && node scripts/run-py.mjs scripts/optimize-novel-images.py",
+    "novel:images": "node scripts/run-py.mjs scripts/optimize-novel-images.py",
     "new:post": "node scripts/new-post.mjs"
   },
   "dependencies": {
@@ -45,6 +47,7 @@
     "eslint": "^10.15.0",
     "eslint-plugin-vue": "10.12.1",
     "gray-matter": "4.0.3",
+    "jszip": "^3.10.2",
     "markdown-it": "^15.0.3",
     "markdown-it-async": "^2.2.0",
     "pagefind": "1.6.0",

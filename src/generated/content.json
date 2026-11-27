@@ -16,6 +16,8 @@
       "draft": false,
       "sample": true,
       "minutes": 2,
+      "chars": 884,
+      "sections": 6,
       "path": "/posts/2026/ipv6-disabledcomponents"
     },
     {
@@ -44,6 +46,8 @@
       "draft": false,
       "sample": true,
       "minutes": 3,
+      "chars": 1264,
+      "sections": 7,
       "path": "/posts/2026/how-to-add-post"
     },
     {
@@ -61,6 +65,8 @@
       "draft": false,
       "sample": true,
       "minutes": 2,
+      "chars": 275,
+      "sections": 8,
       "path": "/posts/2026/cli-notes"
     },
     {
@@ -79,6 +85,8 @@
       "draft": false,
       "sample": true,
       "minutes": 3,
+      "chars": 986,
+      "sections": 5,
       "path": "/posts/2026/vue-ssg-blog"
     },
     {
@@ -112,6 +120,8 @@
       "draft": false,
       "sample": true,
       "minutes": 2,
+      "chars": 653,
+      "sections": 4,
       "path": "/posts/2026/frieren"
     },
     {
@@ -130,6 +140,8 @@
       "draft": false,
       "sample": true,
       "minutes": 2,
+      "chars": 580,
+      "sections": 5,
       "path": "/posts/2026/yurucamp"
     },
     {
@@ -146,6 +158,8 @@
       "draft": false,
       "sample": true,
       "minutes": 2,
+      "chars": 726,
+      "sections": 6,
       "path": "/posts/2026/less-is-more"
     },
     {
@@ -164,6 +178,8 @@
       "draft": false,
       "sample": true,
       "minutes": 2,
+      "chars": 740,
+      "sections": 6,
       "path": "/posts/2026/mob-psycho"
     },
     {
@@ -182,6 +198,8 @@
       "draft": false,
       "sample": true,
       "minutes": 2,
+      "chars": 700,
+      "sections": 5,
       "path": "/posts/2026/your-name"
     },
     {
@@ -198,6 +216,8 @@
       "draft": false,
       "sample": true,
       "minutes": 2,
+      "chars": 763,
+      "sections": 6,
       "path": "/posts/2026/why-write"
     }
   ],

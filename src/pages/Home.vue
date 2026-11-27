@@ -2,13 +2,24 @@
 import { computed } from 'vue'
 import { site } from '@/data/site.config'
 import { useSeo } from '@/composables/useSeo'
-import { latestPosts, favorites, gallery, withBase } from '@/composables/useContent'
+import {
+  posts,
+  latestPosts,
+  favorites,
+  gallery,
+  categoryLabel,
+  withBase,
+} from '@/composables/useContent'
 import { settings, motionEnabled } from '@/composables/useSettings'
+import { pageOf, pad2, isRead } from '@/composables/useBook'
 import TypeLine from '@/components/motion/TypeLine.vue'
 import RevealOnScroll from '@/components/motion/RevealOnScroll.vue'
 import PetalField from '@/components/motion/PetalField.vue'
 import ComicEpilogue from '@/components/content/ComicEpilogue.vue'
+import QuietPages from '@/components/content/QuietPages.vue'
+import MoyuZone from '@/components/content/MoyuZone.vue'
 import PostCard from '@/components/content/PostCard.vue'
+import ReadStamp from '@/components/content/ReadStamp.vue'
 import StickerCard from '@/components/ui/StickerCard.vue'
 import WashiDivider from '@/components/ui/WashiDivider.vue'
 import SiteMark from '@/components/ui/SiteMark.vue'
@@ -33,6 +44,14 @@ const featuredFavorites = computed(() => {
   return [...withCover, ...rest].slice(0, 6)
 })
 const galleryStrip = computed(() => gallery.slice(0, 8))
+
+/**
+ * 一册的数据。
+ * 字数从构建期算好的 chars 里加，阅读时长用构建期算好的 minutes，
+ * 不在这里重新估——两处算出两个数会露馅。
+ */
+const totalChars = computed(() => posts.reduce((sum, p) => sum + (p.chars ?? 0), 0))
+const totalMinutes = computed(() => posts.reduce((sum, p) => sum + (p.minutes ?? 0), 0))
 
 /** 首页那一句自述 */
 const selfNote = '这里放着我正在看的东西、踩过的坑，和一些没什么用但舍不得删的念头。'
@@ -188,8 +207,91 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
       </RevealOnScroll>
     </section>
 
+    <!-- ══ 目次：整本的目录页 ══════════════════════════════ -->
+    <!--
+      同人志翻过扉页就是目次。放在这里而不是顶部，
+      是因为首页前半段是"逛"，走到这里的人往往已经想找某一篇了。
+      页码用的是全站统一的那套（useBook），和文章页右上角的奥付对得上。
+    -->
+    <section class="container section contents-section">
+      <RevealOnScroll>
+        <header class="section-head">
+          <h2 class="section-title">目次</h2>
+          <RouterLink to="/posts" class="section-more">
+            全部 {{ posts.length }} 篇
+            <ArrowRight :size="14" :stroke-width="2" aria-hidden="true" />
+          </RouterLink>
+        </header>
+      </RevealOnScroll>
+
+      <RevealOnScroll>
+        <ol class="contents">
+          <li v-for="post in posts" :key="post.path" class="contents-row">
+            <RouterLink :to="post.path" class="row-link">
+              <span class="row-page">{{ pad2(pageOf(post.path)) }}</span>
+              <span class="row-title">{{ post.title }}</span>
+              <span class="row-leader" aria-hidden="true" />
+              <span class="row-cat">{{ categoryLabel(post.category) }}</span>
+              <span class="row-date">{{ post.date.slice(5).replace('-', '.') }}</span>
+              <ReadStamp v-if="isRead(post.path)" small />
+            </RouterLink>
+          </li>
+        </ol>
+      </RevealOnScroll>
+    </section>
+
+    <!-- ══ 一册的数据 ══════════════════════════════════════ -->
+    <!--
+      奥付式的收尾：这一册到底有多厚。
+      所有数字都是构建期从真实内容里算的，不是写死的文案。
+    -->
+    <section class="container section stats-section">
+      <RevealOnScroll>
+        <div class="stats">
+          <p class="stats-kicker">this volume</p>
+          <dl class="stats-grid">
+            <div class="stat">
+              <dt>文章</dt>
+              <dd>{{ posts.length }}</dd>
+            </div>
+            <div class="stat">
+              <dt>字数</dt>
+              <dd>{{ (totalChars / 1000).toFixed(1) }}k</dd>
+            </div>
+            <div class="stat">
+              <dt>读完要</dt>
+              <dd>{{ totalMinutes }} 分</dd>
+            </div>
+            <div class="stat">
+              <dt>相片</dt>
+              <dd>{{ gallery.length }}</dd>
+            </div>
+            <div class="stat">
+              <dt>收藏</dt>
+              <dd>{{ favorites.length }}</dd>
+            </div>
+          </dl>
+          <p class="stats-note">
+            写得慢，但每一篇都认真。
+            <!-- 这一句和文章页说明同一个态度 -->
+          </p>
+        </div>
+      </RevealOnScroll>
+    </section>
+
     <!-- ══ 卷末四格：这一页是整本的结尾 ════════════════════ -->
     <ComicEpilogue />
+
+    <!--
+      ══ 空白页：正文结束到附录之间的那几页 ══════════════
+      整站唯一的彩蛋。没有任何链接和按钮，只让页面说五句话，
+      给"正文完了 → 还有附录"之间垫一段停顿。
+    -->
+    <QuietPages />
+
+    <!-- ══ 附录：摸鱼分区 ══════════════════════════════════ -->
+    <!-- 正文结束了，后面还有几页附录 —— 一本同人志本来就是这样装订的 -->
+    <MoyuZone />
   </div>
 </template>
 
@@ -245,7 +347,9 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
 /*
  * 暗色主题下的主视觉。
  * 原图是浅色水彩，直接放在黑底上要么糊成一团要么被遮罩吃干净。
- * 这里把画面压暗、提对比，让它变成"发光的剪纸"，只保留山的轮廓。
+ * 这里把画面压一点、提对比，让它变成"夜里还亮着的那幅画"——
+ * 以前 brightness(0.55) 压得太狠，整个首屏就是一块黑，什么都看不见；
+ * 0.78 保住了山的轮廓和天空的颜色，文字仍靠遮罩保证读得清。
  *
  * 为什么整条选择器都放进 :global()：
  *   主题属性挂在 <html> 上，不在本组件的 DOM 里。如果只把前缀写进 :global()，
@@ -253,7 +357,7 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
  *   这条规则就永远匹配不到。
  */
 :global([data-theme='neon'] .hero-media) {
-  filter: saturate(0.9) brightness(0.55) contrast(1.25);
+  filter: saturate(1.05) brightness(0.78) contrast(1.18);
 }
 
 :global([data-theme='neon'] .hero-veil) {
@@ -643,5 +747,165 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
   font-size: clamp(1rem, 2.4vw, 1.2rem);
   line-height: 1.9;
   color: var(--ink);
+}
+
+/* ── 目次 ───────────────────────────────────────────────── */
+/*
+ * 一行一篇：页码 · 标题 · 引导点 · 分类 · 日期。
+ * 引导点用 flex + 虚线背景实现，标题多长都能把右边推到边上，
+ * 这就是纸质目次的样子。
+ */
+.contents {
+  display: grid;
+  /*
+   * 必须显式写 minmax(0, 1fr)。
+   *
+   * 【为什么】
+   *   grid 的隐式列是 auto，宽度取"内容的最大宽度"。
+   *   目次的标题是 nowrap 的，一长条能把整列撑到 414px，
+   *   于是整个 ol 比容器宽，手机上直接横向溢出。
+   *   minmax(0, 1fr) 把列宽锁在容器内，多出来的字由 ellipsis 收掉。
+   */
+  grid-template-columns: minmax(0, 1fr);
+  border-top: 1px solid var(--line);
+}
+
+.contents-row {
+  border-bottom: 1px solid var(--line);
+  /* 同理：行本身也不许被里面的 nowrap 标题撑宽 */
+  min-width: 0;
+}
+
+.row-link {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  padding: 11px 4px;
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    padding-left var(--t-fast) var(--ease-out);
+}
+
+.row-link:hover {
+  background: var(--bg-soft);
+  padding-left: 10px;
+}
+
+.row-page {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.row-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 引导点：一条虚线，把标题和右边隔开 */
+.row-leader {
+  flex: 1 1 auto;
+  min-width: 20px;
+  height: 1px;
+  margin-bottom: 4px;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--ink-soft) 40%, transparent) 0 2px,
+    transparent 2px 6px
+  );
+  background-size: 6px 1px;
+  background-repeat: repeat-x;
+}
+
+.row-cat {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+
+.row-date {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 一册的数据 ─────────────────────────────────────────── */
+.stats {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 22px clamp(18px, 3vw, 28px) 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+}
+
+.stats-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.stat dt {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+
+.stat dd {
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-note {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  font-family: var(--font-quote);
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 767px) {
+  .row-title {
+    font-size: 13px;
+  }
+
+  .row-cat {
+    display: none;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 10px;
+  }
+
+  .stat dd {
+    font-size: 19px;
+  }
 }
 </style>

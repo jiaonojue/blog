@@ -8,6 +8,127 @@
  * 两套主题靠 <html data-theme="..."> 切换，模板不需要知道自己在哪套主题里。
  */
 
+/* ── 让配色能"渐变"过去 ────────────────────────────────────
+ *
+ * 【为什么需要这一段】
+ *   普通 CSS 变量对浏览器来说只是一串字符。把 --bg 从 #fff8f4 改成 #0e0c16，
+ *   浏览器不知道这两个值"是同一个东西的两个状态"，只能瞬间替换，
+ *   于是切主题、滑进摸鱼分区时整页"啪"地换一张纸，很扎眼。
+ *   用 @property 把它登记成"颜色"，它就能像 background-color 一样插值，
+ *   再由 base.css 里 html 上的一条 transition 驱动，
+ *   整站的底色、墨色、描边会一起淡过去。
+ *
+ * 【为什么不支持 @property 也没关系】
+ *   不支持时这些声明整段被忽略，变量还是普通变量，
+ *   行为退化成"瞬间切换"——和以前完全一样，不会坏。
+ *
+ * 【为什么只登记颜色，不登记 --shadow】
+ *   阴影是一整串值（偏移 + 模糊 + 颜色），插值规则复杂且容易出错；
+ *   而阴影变色的那一瞬几乎看不出来，不值得为它冒风险。
+ */
+@property --bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fff8f4;
+}
+@property --bg-soft {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fdefe9;
+}
+@property --surface {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --ink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #211c22;
+}
+@property --ink-soft {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #6b6270;
+}
+@property --line {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #eadfd8;
+}
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ff5c8a;
+}
+@property --accent-soft {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffe3ec;
+}
+@property --accent-ink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --stamp-ink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #c93c56;
+}
+@property --veil-from {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 248, 244, 0);
+}
+@property --veil-to {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fff8f4;
+}
+@property --glow-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 138, 172, 0.55);
+}
+
+/*
+ * 阅读器的六个颜色也登记成颜色。
+ * 理由和上面一样：纸色和夜间之间切换时，整块纸要淡过去，
+ * 而不是"啪"地翻面。这几个变量只在阅读器内部使用，
+ * 所以 inherits: false —— 不往外传，也不受外面影响。
+ */
+@property --paper {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f7f1e4;
+}
+@property --paper-hi {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fffcf4;
+}
+@property --text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2b2620;
+}
+@property --text-soft {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #7a7167;
+}
+@property --rule {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #e3d8c4;
+}
+@property --mark {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #b4713f;
+}
+
 :root {
   /* ── 尺寸 ─────────────────────────────── */
   --r-card: 20px;
@@ -39,6 +160,38 @@
   --font-display: 'ZCOOL KuaiLe', var(--font-body);
   --font-quote: 'LXGW WenKai', var(--font-body);
   --font-mono: 'Space Grotesk', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  /* ── 阅读器：纸色 / 夜间 ─────────────────────────────
+   * 小说阅读器不跟站点主题走，它自己有纸色 / 夜间两档。
+   * 为什么另开一套：站点主题管的是「界面」，阅读器要的是「纸」。
+   * 日间想用偏暖的护眼米黄，夜间想用深灰而不是纯黑（纯黑上长时间读字会跳），
+   * 这两个诉求跟站点的粉白 / 霓虹是两件事，混用会两边都不对。
+   * 放在 :root 而不是某个主题块里 —— 它是恒定的，不该随主题消失。
+   *
+   * 【为什么纸色不是纯白】
+   *   阅读器嵌在附录的深色卡片里。一块纯白（#fff）贴在深紫黑上，
+   *   边界像开了一盏灯，看久了眼睛发酸；而且和整站的暖纸调完全两个体系。
+   *   这里用暖米色，它和附录的深色之间还隔着一层"旧纸"的感觉，
+   *   像把一册线装书摊在了深色桌布上，而不是把一张打印纸拍在屏幕上。
+   */
+  --reader-paper: #f7f1e4;
+  --reader-paper-hi: #fffcf4;
+  --reader-ink: #2b2620;
+  --reader-ink-soft: #7a7167;
+  --reader-line: #e3d8c4;
+  --reader-accent: #b4713f;
+
+  /*
+   * 夜间不用纯黑：纯黑上白字边缘会"发光"，读久了字在抖。
+   * 用带一点紫的深灰，和附录那层 --bg 是同一个家族，
+   * 这样夜间阅读器和外面的卡片看起来是同一张纸的两个面。
+   */
+  --reader-night: #15131c;
+  --reader-night-hi: #1e1b27;
+  --reader-night-ink: #cbc5bb;
+  --reader-night-soft: #837c8c;
+  --reader-night-line: #2a2635;
+  --reader-night-accent: #d99b62;
 }
 
 /* ── Daylight：日系清新 + 樱粉奶油（默认 / 亮色） ────────────── */
@@ -100,6 +253,44 @@
 
   /* 霓虹主题下的印章：朱红在暗底上会发闷，换成偏洋红的高饱和粉 */
   --stamp-ink: #ff6b9e;
+}
+
+/* ── 摸鱼分区：滑到首页底部时自动进入的暗场 ──────────────────
+ *
+ * 【为什么单独一层，而不是切到 neon 主题】
+ *   这是"看到哪儿"决定的，不是"访客选了什么"决定的。
+ *   访客选了日间，滑到 B 面也该暗下来——就像翻到书的另一半，
+ *   纸张和油墨都换了一套。所以它挂在 data-zone 上，
+ *   和 data-theme 互不干扰：离开这一区，主题原样回来。
+ *
+ * 【为什么写在两套主题之后】
+ *   选择器权重和 [data-theme='neon'] 一样（都是 0,1,0），
+ *   靠"后写的赢"覆盖。顺序不能调。
+ */
+[data-zone='moyu'] {
+  color-scheme: dark;
+
+  --bg: #0e0c16;
+  --bg-soft: #14121f;
+  --surface: #1a1728;
+  --ink: #f1edff;
+  --ink-soft: #a49bbd;
+  --line: #2c2742;
+
+  --accent: #ff5c9a;
+  --accent-soft: #2e1128;
+  --accent-ink: #ffffff;
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 16px 44px rgba(0, 0, 0, 0.62);
+
+  --noise-opacity: 0.06;
+  --veil-from: rgba(14, 12, 22, 0);
+  --veil-to: #0e0c16;
+  --glow-blend: screen;
+  --glow-color: rgba(255, 92, 154, 0.38);
+
+  --stamp-ink: #ff7aa8;
 }
 
 /* ── 减少动效：系统设置或站内开关命中时，所有时长归零 ────────── */

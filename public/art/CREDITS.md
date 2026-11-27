@@ -72,6 +72,10 @@
 | `bg/bg-41.webp` | 雪山热气球 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7269698 | 仅个人展示 | 2026-11-26 | C | 背景图，粉调清晨 |
 | `bg/bg-42.webp` | 拱桥夕照 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7269691 | 仅个人展示 | 2026-11-26 | C | 背景图，紫金黄昏 |
 | `bg/bg-43.webp` | 天空之城 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7094129 | 仅个人展示 | 2026-11-26 | C | 背景图，蓝绿奇幻 |
+| `girls/moyu-companion.webp` | 戴帽少女 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=4363932 | 仅个人展示 | 2026-11-28 | C | 摸鱼分区角落的看板娘，羽化蒙版融入暗场 |
+| `girls/quiet-end.webp` | 比心道别 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=4291392 | 仅个人展示 | 2026-11-28 | C | 空白页末尾「完」旁的小插画，压淡羽化 |
+| `girls/notes-desk.webp` | 桌前等门开 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=4482277 | 仅个人展示 | 2026-11-28 | C | 便条板密钥门旁的插画，宽屏显示 |
+| `girls/kimono-snow.webp` | 雪地和伞 | 未标注 | https://safebooru.org/index.php?page=post&s=view&id=7353755 | 仅个人展示 | 2026-11-28 | C | 备用插画（暂未上站） |
 | anime/14741.webp 等 173 张 | 番剧封面合集 | 各作品版权方 | https://anilist.co | 仅个人展示 | 2026-11-26 | C | 工具页「番剧评分表」用；经 AniList 取到的作品封面，文件名即 AniList 作品 ID |
 
 ---

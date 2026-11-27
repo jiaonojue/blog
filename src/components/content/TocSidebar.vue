@@ -61,9 +61,13 @@ function jumpTo(id: string, event: MouseEvent) {
 
 <style scoped>
 .toc {
-  position: sticky;
-  top: 104px;
-  max-height: calc(100dvh - 140px);
+  /*
+   * 吸顶交给外面的 .post-aside（奥付也在那一栏里）。
+   * 这里只负责在剩下的高度里自己滚：flex: 1 1 auto + min-height: 0
+   * 是让一个 flex 子项能够收缩、从而真正出现滚动条的那一对固定写法。
+   */
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   /* 内容超出时只纵向滚，横向永远不要出现滚动条 */
   overflow-x: hidden;

@@ -1,0 +1,55 @@
+{
+  "slug": "eromanga-13",
+  "title": "埃罗芒阿老师 13 埃罗芒阿祭典",
+  "authors": [
+    "伏见司",
+    "日白白白白白&Ciga"
+  ],
+  "language": "zh-CN",
+  "cover": "img/01.webp",
+  "chapters": [
+    {
+      "no": 1,
+      "title": "彩页 · 目录",
+      "file": "ch-1.html",
+      "chars": 41
+    },
+    {
+      "no": 2,
+      "title": "第一章",
+      "file": "ch-2.html",
+      "chars": 13744
+    },
+    {
+      "no": 3,
+      "title": "第二章",
+      "file": "ch-3.html",
+      "chars": 15415
+    },
+    {
+      "no": 4,
+      "title": "第三章",
+      "file": "ch-4.html",
+      "chars": 14985
+    },
+    {
+      "no": 5,
+      "title": "第四章",
+      "file": "ch-5.html",
+      "chars": 20399
+    },
+    {
+      "no": 6,
+      "title": "后记",
+      "file": "ch-6.html",
+      "chars": 153
+    },
+    {
+      "no": 7,
+      "title": "编者记",
+      "file": "ch-7.html",
+      "chars": 362
+    }
+  ],
+  "totalChars": 65099
+}

@@ -177,7 +177,18 @@ onUnmounted(() => {
 
         <!-- 页面右下角：页码 + 收尾 -->
         <footer class="comic-foot">
-          <p class="comic-end">翻到这一页，就说明你已经把整本看完了。</p>
+          <div class="comic-end-wrap">
+            <p class="comic-end">翻到这一页，就说明你已经把整本看完了。</p>
+            <!--
+              往附录去的入口。卷末四格是"最后一页"，但同人志后面还会钉几页附录，
+              这里顺着这个说法接下去，不显得突兀。
+              用 <a href="#moyu"> 而不是 RouterLink：同一页内跳锚点，不该触发路由。
+            -->
+            <a class="comic-next" href="#moyu">
+              后面还有几页附录
+              <span aria-hidden="true">→</span>
+            </a>
+          </div>
           <div class="comic-pageno">
             <span class="pageno-label">P.</span>
             <span class="pageno-num">{{ pad2(totalPages) }}</span>
@@ -436,6 +447,41 @@ onUnmounted(() => {
   font-size: clamp(11.5px, 1.2vw, 13.5px);
   line-height: 1.6;
   color: var(--ink-soft);
+}
+
+/* 往附录去的入口：一行小字，不抢正文的注意力 */
+.comic-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  transition: gap var(--t-fast) var(--ease-out);
+}
+
+.comic-next:hover {
+  gap: 9px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comic-next {
+    transition: none;
+  }
+
+  .comic-next:hover {
+    gap: 5px;
+  }
+}
+
+[data-motion='off'] .comic-next {
+  transition: none;
+}
+
+[data-motion='off'] .comic-next:hover {
+  gap: 5px;
 }
 
 .comic-pageno {

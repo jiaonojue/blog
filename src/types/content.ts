@@ -23,6 +23,10 @@ export interface Post {
   sample: boolean
   /** 预计阅读时长（分钟） */
   minutes: number
+  /** 正文非空白字数（不含代码块），构建期算好，奥付卡片用 */
+  chars?: number
+  /** 二级标题数量，构建期算好，奥付卡片用 */
+  sections?: number
   /** URL 路径，不含 base，例如 /posts/2026/hello */
   path: string
 }

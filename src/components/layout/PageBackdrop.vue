@@ -37,7 +37,8 @@ const style = computed(() => {
 <template>
   <div v-if="seed" class="page-bg no-print" aria-hidden="true">
     <div class="page-bg-img" :style="style" />
-    <div class="page-bg-veil" />
+    <div class="page-bg-veil page-bg-veil--dim" aria-hidden="true" />
+    <div class="page-bg-veil" aria-hidden="true" />
   </div>
 </template>
 
@@ -75,6 +76,13 @@ const style = computed(() => {
 /*
  * 遮罩：从顶部到底部逐渐变实，保证正文区域（页面中下部）背景最淡。
  * 用 --bg 而不是写死白色，这样夜间主题自动跟着换。
+ *
+ * 【为什么有两层纱】
+ *   白天这层纱很厚（插画几乎只剩光感）；到了暗场如果还是这么厚，
+ *   插画就真的"一片黑"了——深色底 + 厚纱 + 压暗滤镜三层叠上去，
+ *   图等于不存在。所以夜里换一层开孔大得多的薄纱。
+ *   两层都用 opacity 淡入淡出（opacity 是天然可过渡的属性），
+ *   切主题时纱跟着 520ms 一起变，不会闪。
  */
 .page-bg-veil {
   position: absolute;
@@ -86,19 +94,45 @@ const style = computed(() => {
     color-mix(in srgb, var(--bg) 92%, transparent) 68%,
     var(--bg) 100%
   );
+  transition: opacity var(--t-slow) var(--ease-in-out);
 }
 
-/* 夜间主题背景更暗一点，否则霓虹配色压不住 */
+/* 暗场用的薄纱：只压正文区，天空和画面主体透出来 */
+.page-bg-veil--dim {
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--bg) 26%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 38%, transparent) 34%,
+    color-mix(in srgb, var(--bg) 58%, transparent) 68%,
+    var(--bg) 100%
+  );
+}
+
 /*
- * 【注意这里必须是 :global(整条选择器)】
- *   Vue 的 scoped 编译只会保留 :global() 括号里的那一段，括号外的部分会被丢掉。
- *   写成 `:global([data-theme='neon']) .page-bg-img` 的话，
- *   产物会变成裸的 `[data-theme=neon] { filter: blur(...) }`——
- *   直接命中 <html>，把整页都糊掉。
- *   所以整条选择器都要放进 :global() 里。
+ * 暗场（霓虹主题 / 摸鱼分区）换纱。
+ * 为什么整条选择器都放进 :global()：主题属性挂在 <html> 上，
+ * 不在本组件的 DOM 里，只把前缀放 :global() 会因为哈希对不上而永远匹配不到。
  */
-:global([data-theme='neon'] .page-bg-img) {
-  filter: blur(3px) saturate(0.9) brightness(0.72);
+:global([data-theme='neon'] .page-bg-veil),
+:global([data-zone='moyu'] .page-bg-veil) {
+  opacity: 0;
+}
+
+:global([data-theme='neon'] .page-bg-veil--dim),
+:global([data-zone='moyu'] .page-bg-veil--dim) {
+  opacity: 1;
+}
+
+/*
+ * 暗场下的插画只轻轻压一点。
+ * 以前是 brightness(0.72)：滤镜压暗 + 厚纱 + 深底三层叠加后，
+ * 画面细节全被吃掉，看起来就是一整块黑。0.92 刚好——
+ * 亮部还发亮，暗部沉得下去，和深紫底融成一体。
+ */
+:global([data-theme='neon'] .page-bg-img),
+:global([data-zone='moyu'] .page-bg-img) {
+  filter: blur(3px) saturate(1.02) brightness(0.92);
 }
 
 /* 关掉动效时不要那点呼吸位移 */

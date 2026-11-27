@@ -13,6 +13,7 @@ import { withBase } from '@/composables/useContent'
 import { pageOf, issueOf, pad2, totalPages, markRead } from '@/composables/useBook'
 import BackButton from '@/components/ui/BackButton.vue'
 import TocSidebar from '@/components/content/TocSidebar.vue'
+import OkuzukeCard from '@/components/content/OkuzukeCard.vue'
 import TapeLabel from '@/components/ui/TapeLabel.vue'
 import WashiDivider from '@/components/ui/WashiDivider.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -248,27 +249,37 @@ onUnmounted(() => {
 
           <WashiDivider />
 
-          <!-- 上一篇 / 下一篇 -->
+          <!-- 前回 / 次回予告 -->
           <!-- data-pagefind-ignore：另一篇文章的标题不属于本页内容 -->
           <nav class="post-nav" aria-label="相邻文章" data-pagefind-ignore>
             <RouterLink v-if="nav.prev" :to="nav.prev.path" class="nav-item">
-              <span class="nav-dir">← 上一篇</span>
+              <span class="nav-dir">← 前回</span>
               <span class="nav-title">{{ nav.prev.title }}</span>
             </RouterLink>
             <span v-else class="nav-item is-empty" />
 
             <RouterLink v-if="nav.next" :to="nav.next.path" class="nav-item align-end">
-              <span class="nav-dir">下一篇 →</span>
+              <span class="nav-dir">次回予告 →</span>
               <span class="nav-title">{{ nav.next.title }}</span>
+              <!--
+                预告的"钩子"：直接用文章自己的摘要。
+                摘要本来就是为"让人想点进来"写的一句话，另写一条会重复。
+              -->
+              <span class="nav-summary">{{ nav.next.summary }}</span>
             </RouterLink>
             <span v-else class="nav-item is-empty" />
           </nav>
         </article>
 
-        <!-- ══ 侧边目录 ════════════════════════════════════ -->
-        <!-- data-pagefind-ignore：目录是标题的重复，进索引会盖过正文 -->
-        <aside v-if="toc.length" class="post-aside" data-pagefind-ignore>
-          <TocSidebar :entries="toc" />
+        <!-- ══ 右栏：奥付 + 目录 ═══════════════════════════ -->
+        <!--
+          data-pagefind-ignore：奥付里的数字和目录都是正文的重复，
+          进搜索索引会盖过真正的正文。
+          这一栏整体 sticky：奥付钉在上面不动，目录在它下面自己滚。
+        -->
+        <aside class="post-aside" data-pagefind-ignore>
+          <OkuzukeCard :post="post" />
+          <TocSidebar v-if="toc.length" :entries="toc" />
         </aside>
       </div>
     </template>
@@ -280,12 +291,53 @@ onUnmounted(() => {
   padding-top: 24px;
 }
 
+/*
+ * 正文 | 批注留白 | 右栏
+ *
+ * 【为什么中间要留 180px】
+ *   页边批注（MarginNotes）是绝对定位的，从正文右缘往外伸 20px 再占 150px，
+ *   一共需要 170px 的空隙。以前这里是 56px，批注会直接压到目录上——
+ *   只是目录那时只有几行字，不容易看出来。
+ *   现在把空隙留够，批注落在中间那条"天头"里，正好是纸质书外侧留白的做法。
+ *
+ * 【为什么只在 ≥1200px 生效】
+ *   容器 max-width 1200、内边距 24，所以视口 ≥1200 时内容区固定 1152px。
+ *   680 + 180 + 220 = 1080，放得下。再窄就退回 56px（批注本来也不显示）。
+ */
 .post-layout {
   display: grid;
   grid-template-columns: minmax(0, var(--prose-max)) 220px;
   gap: 56px;
   justify-content: center;
   align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .post-layout {
+    gap: 180px;
+  }
+}
+
+/*
+ * 右栏整列吸顶。
+ *
+ * 【为什么 sticky 从目录挪到这里】
+ *   以前只有目录吸顶。现在奥付钉在目录上面，如果还是目录自己 sticky，
+ *   两块会各滚各的、叠在一起。整列 sticky 之后：奥付固定，
+ *   目录在剩余高度里自己滚（见 TocSidebar 的 flex: 1 1 auto）。
+ *
+ * 【overflow: hidden 为什么加在这里】
+ *   让目录的滚动边界停在本栏内部。加在这一层不会破坏 sticky 本身——
+ *   破坏 sticky 的是"祖先"有 overflow，自己是没关系的。
+ */
+.post-aside {
+  position: sticky;
+  top: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: calc(100dvh - 140px);
+  overflow: hidden;
 }
 
 /* 1100px 以下隐藏侧边目录 */
@@ -557,6 +609,19 @@ onUnmounted(() => {
 .nav-title {
   font-size: 14px;
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 次回予告的那一句钩子：摘要原样用，两行截断 */
+.nav-summary {
+  font-family: var(--font-quote);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-soft);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;

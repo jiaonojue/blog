@@ -1,0 +1,286 @@
+/**
+ * 便条板 —— 手机写一条，电脑上复制走。
+ *
+ * 【它解决的是什么】
+ *   在手机上看到一段想抄的话、一张想存的图，要弄到电脑上，
+ *   通常得发微信给自己、或者存相册再传网盘。
+ *   这个板子就干一件事：让三个格子里临时躺着三条东西，
+ *   电脑上打开网站就能复制。
+ *
+ * 【为什么是"三个格子"而不是一个收件箱】
+ *   收件箱会越堆越多，最后变成第二个微信收藏。
+ *   三个格子是刻意的限制：想放第四条，就得先清掉一条。
+ *   限制本身就是"这是临时中转，不是存档"的提醒。
+ *
+ * 【为什么用 ntfy】
+ *   纯静态站没有后端。要跨设备，就必须有一个公共中转。
+ *   ntfy.sh 是个开源的推送服务，不需要注册、不需要 API key，
+ *   发一条就是往一个"主题"里 POST 一段文本，读就是订阅那个主题。
+ *   它有 CORS，浏览器可以直接调；也支持上传附件，图片能过。
+ *   代价是：它的主题是公开的——谁知道主题名谁就能读。
+ *   所以主题名不是随便起的，而是从密钥派生的（见 topicOf）。
+ *
+ * 【密钥是什么】
+ *   就是"房间号"。同一个密钥 = 同一个板子。
+ *   它不出现在仓库里，只存在你自己的浏览器 localStorage 里，
+ *   手机上第一次用的时候手输一次（或扫同一个二维码）。
+ *   别人不知道你的密钥，就找不到你的主题，也就读不到你的便条。
+ *
+ * 【三条是怎么数出来的】
+ *   ntfy 会保留一段时间的历史消息。我们只取最近 N 条，
+ *   超过三条时把最旧的删掉——ntfy 支持 DELETE，需要那条消息的 id。
+ *   这样"最多三条"是真的三条，不是"界面上只显示三条"。
+ */
+import { site } from '@/data/site.config'
+
+/** 一张便条 */
+export interface Note {
+  /** ntfy 的消息 id，删除时要用 */
+  id: string
+  /** 发出时间（秒） */
+  time: number
+  /** 文字内容，可能为空（只发图时） */
+  text: string
+  /** 附件的直链，没有就是 null */
+  image: string | null
+  /** 附件的原始文件名 */
+  imageName: string | null
+}
+
+/** 一次最多留三条 */
+export const MAX_NOTES = 3
+
+/** 密钥存在这里。和站点其他设置分开，清缓存不会顺手清掉它 */
+const KEY_STORAGE = 'site:notes:key'
+
+const SERVER = 'https://ntfy.sh'
+
+/**
+ * 把密钥变成一个主题名。
+ *
+ * 【为什么不是直接用密钥当主题】
+ *   ntfy 的主题名会出现在请求 URL 和它自己的日志里。
+ *   直接拿密钥当主题，等于把"房间号"写在信封外面。
+ *   这里做一次不可逆的摘要，主题名和密钥之间就没有直接对应关系了。
+ *
+ * 【为什么用 SHA-256 而不是自造的哈希】
+ *   自造的哈希（比如把字符码加起来）很容易碰撞，
+ *   两个不同的密钥可能落到同一个主题上。
+ *   Web Crypto 的 SHA-256 是浏览器自带的，不用引第三方库。
+ */
+export async function topicOf(key: string): Promise<string> {
+  const trimmed = key.trim().toLowerCase()
+  if (!trimmed) throw new Error('empty key')
+  const bytes = new TextEncoder().encode(`moyu-notes:${trimmed}`)
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  // ntfy 主题名只能用 [A-Za-z0-9_-]，取前 40 位十六进制刚好够唯一
+  return `moyu${hex.slice(0, 40)}`
+}
+
+/** 读本机存着的密钥 */
+export function readKey(): string {
+  try {
+    return localStorage.getItem(KEY_STORAGE) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+/** 记住密钥（空字符串 = 忘掉它） */
+export function saveKey(key: string): void {
+  try {
+    if (key) localStorage.setItem(KEY_STORAGE, key)
+    else localStorage.removeItem(KEY_STORAGE)
+  } catch {
+    /* 隐私模式下写不进去，本轮仍然能用 */
+  }
+}
+
+/** ntfy 的一条原始消息，只取用得到的字段 */
+interface RawMessage {
+  id?: string
+  time?: number
+  event?: string
+  message?: string
+  attachment?: { url?: string; name?: string }
+}
+
+function toNote(raw: RawMessage): Note | null {
+  if (!raw.id || raw.event === 'open' || raw.event === 'keepalive') return null
+  const text = (raw.message ?? '').trim()
+  const image = raw.attachment?.url ?? null
+  // 既没字也没图（比如 ntfy 自己发的系统消息）就不算一张便条
+  if (!text && !image) return null
+  return {
+    id: raw.id,
+    time: raw.time ?? Math.floor(Date.now() / 1000),
+    text,
+    image,
+    imageName: raw.attachment?.name ?? null,
+  }
+}
+
+/**
+ * 拉最近三条。
+ *
+ * 【为什么用 ?poll=1 而不是 WebSocket】
+ *   订阅（/sse 或 /ws）会一直挂着一条连接，首页只是"打开看一眼"，
+ *   挂长连接不值得。poll=1 是一次性请求，拿完就断，
+ *   配合组件自己的定时刷新就够了。
+ *
+ * 【为什么带 since=all】
+ *   ntfy 默认只返回"从现在开始"的新消息。
+ *   我们要的是"板子上现有的"，所以明确要全部历史，
+ *   再自己截到三条。
+ */
+export async function fetchNotes(topic: string): Promise<Note[]> {
+  const res = await fetch(`${SERVER}/${topic}/json?poll=1&since=all`, {
+    headers: { Accept: 'application/json' },
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+  const body = await res.text()
+  const notes: Note[] = []
+  for (const line of body.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    try {
+      const note = toNote(JSON.parse(trimmed) as RawMessage)
+      if (note) notes.push(note)
+    } catch {
+      /* 单行坏了不影响其它行 */
+    }
+  }
+
+  // 新的在前
+  notes.sort((a, b) => b.time - a.time)
+  return notes.slice(0, MAX_NOTES)
+}
+
+/** 发一条文字。返回新消息的 id */
+export async function postNote(topic: string, text: string): Promise<string> {
+  const res = await fetch(`${SERVER}/${topic}`, {
+    method: 'POST',
+    body: text,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const data = (await res.json()) as RawMessage
+  return data.id ?? ''
+}
+
+/**
+ * 发一张图。
+ *
+ * 【为什么图片要单独一个函数】
+ *   ntfy 的附件是"把文件放进请求体，文件名放在头里"，
+ *   不是 multipart。所以 Content-Type 要设成文件本身的类型，
+ *   消息文字则放在 X-Message 头里。
+ *
+ * 【大小上限】
+ *   ntfy.sh 免费实例允许 15MB。手机上随手拍的照片常常超过，
+ *   所以调用方要先把图压到合理尺寸再传（见 shrinkImage）。
+ */
+export async function postImage(
+  topic: string,
+  file: Blob,
+  filename: string,
+  caption = '',
+): Promise<string> {
+  const res = await fetch(`${SERVER}/${topic}`, {
+    method: 'PUT',
+    body: file,
+    headers: {
+      // 只用 ASCII 会丢中文文件名，ntfy 接受百分号编码
+      Filename: encodeURIComponent(filename),
+      'Content-Type': file.type || 'application/octet-stream',
+      'X-Message': caption || '收到一张图',
+    },
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const data = (await res.json()) as RawMessage
+  return data.id ?? ''
+}
+
+/** 删掉一条。用来维持"最多三条" */
+export async function deleteNote(topic: string, id: string): Promise<void> {
+  // 删不掉不算致命：界面上已经把它剔掉了，下次刷新会再试
+  await fetch(`${SERVER}/${topic}/${id}`, { method: 'DELETE' }).catch(() => undefined)
+}
+
+/**
+ * 把手机拍的大图压到能传的尺寸。
+ *
+ * 【为什么在浏览器里压】
+ *   手机照片动辄 4～8MB，直接传要么超限，要么让对面等半天。
+ *   这里用 canvas 缩到最长边 1600、JPEG 0.82，
+ *   通常能压到 300KB 上下，在手机上看起来仍然清楚。
+ *   顺便把 EXIF 里的定位信息一起丢掉了——canvas 重绘不留元数据，
+ *   这对"发到公共中转站"这件事来说是必要的。
+ */
+export async function shrinkImage(file: File, maxSide = 1600): Promise<Blob> {
+  if (!file.type.startsWith('image/')) return file
+  // GIF 会动，重绘就变成一张静图了，原样传
+  if (file.type === 'image/gif') return file
+
+  const bitmap = await createImageBitmap(file)
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
+  const w = Math.round(bitmap.width * scale)
+  const h = Math.round(bitmap.height * scale)
+
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return file
+  ctx.drawImage(bitmap, 0, 0, w, h)
+  bitmap.close?.()
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.82),
+  )
+  return blob ?? file
+}
+
+/** 这条便条是多久以前发的，用中文短说法 */
+export function ago(time: number): string {
+  const diff = Math.max(0, Math.floor(Date.now() / 1000) - time)
+  if (diff < 60) return '刚刚'
+  if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`
+  return `${Math.floor(diff / 86400)} 天前`
+}
+
+/** 附件直链要补上站点 base 吗？不用——它在 ntfy 的域上，是绝对地址 */
+export function noteImageUrl(note: Note): string {
+  return note.image ?? ''
+}
+
+/** 复制一段文字到剪贴板，失败时退回到老办法 */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    try {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(ta)
+      return ok
+    } catch {
+      return false
+    }
+  }
+}
+
+/** 站点根地址，分享给手机时用 */
+export function shareUrl(): string {
+  if (typeof location === 'undefined') return site.base
+  return `${location.origin}${site.base}#notes`
+}
