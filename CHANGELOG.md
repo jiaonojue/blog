@@ -62,6 +62,17 @@
 
 ### 修复
 
+- **切到夜间模式后整站像蒙了一层雾，完全看不清**（最严重的一个）：
+  `PageBackdrop.vue` 里写成 `:global([data-theme='neon']) .page-bg-img`。
+  Vue 的 scoped 编译只保留 `:global()` 括号里那一段，括号外的 `.page-bg-img` 被丢掉，
+  产物塌缩成裸的 `[data-theme=neon] { filter: blur(3px) saturate(.9) brightness(.72) }`——
+  这条规则直接命中 `<html>`，把整页连同文字一起模糊掉，还压暗了 28%。
+  所以只有夜间模式会中招，白天主题看起来一切正常。
+  改成把整条选择器放进 `:global()`：`:global([data-theme='neon'] .page-bg-img)`。
+  这和 0.1.0 里 `ComicEpilogue` 那个 bug 是同一个成因，同一个写法错误犯了两次
+- **自定义光标对链接和按钮不生效**：`CursorDot.vue` 里同样写成了
+  `:global(.has-custom-cursor) a`，产物塌缩成裸的 `.has-custom-cursor`，
+  `a` / `button` / `input` / `textarea` 这些后缀全丢了。一并改成整条包进 `:global()`
 - **关于页的自我介绍正文一直没显示**：`content/about.md` 里第二个 `---`
   之后的正文被构建脚本渲染进了 `about.html`，但 `About.vue` 的模板从头到尾没有引用它——
   文档里写着"正文会显示在页面上"，实际页面上只有插画、问答和时间线。

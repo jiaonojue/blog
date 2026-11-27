@@ -96,15 +96,22 @@ onUnmounted(() => {
   transition: opacity var(--t-fast) var(--ease-out);
 }
 
-/* 系统光标隐藏（但输入框保留，否则打字看不见插入点） */
+/*
+ * 系统光标隐藏（但输入框保留，否则打字看不见插入点）
+ *
+ * 【整条选择器都要放进 :global()】
+ *   Vue 的 scoped 编译只保留 :global() 括号里的那一段，括号外的部分会被丢掉。
+ *   写成 `:global(.has-custom-cursor) a` 的话，产物会塌缩成裸的 `.has-custom-cursor`，
+ *   `a` / `button` 这些后缀就没了——规则等于没写。
+ */
 :global(.has-custom-cursor),
-:global(.has-custom-cursor) a,
-:global(.has-custom-cursor) button {
+:global(.has-custom-cursor a),
+:global(.has-custom-cursor button) {
   cursor: none;
 }
 
-:global(.has-custom-cursor) input,
-:global(.has-custom-cursor) textarea {
+:global(.has-custom-cursor input),
+:global(.has-custom-cursor textarea) {
   cursor: text;
 }
 </style>

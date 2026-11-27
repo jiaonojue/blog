@@ -178,6 +178,40 @@ vite-ssg 在构建时把每个路由渲染成真实 HTML，两个问题一起解
 
 ### 最隐蔽的一个坑
 
+**Vue scoped 里的 `:global()` 必须把整条选择器包进去。**
+
+```css
+/* 错：产物塌缩成裸的 [data-theme=neon]，直接命中 <html> */
+:global([data-theme='neon']) .page-bg-img {
+  filter: blur(3px);
+}
+
+/* 对 */
+:global([data-theme='neon'] .page-bg-img) {
+  filter: blur(3px);
+}
+```
+
+Vue 的 scoped 编译**只保留 `:global()` 括号里的那一段**，括号外的部分会被丢掉。
+上面那条错的写法，产物变成：
+
+```css
+[data-theme='neon'] {
+  filter: blur(3px) saturate(0.9) brightness(0.72);
+}
+```
+
+没有任何后代选择器，于是直接作用在 `<html>` 上——**整页连文字一起被模糊**，
+而且只在夜间主题下发作，白天一切正常，所以极难联想到是这一行的问题。
+
+**这个错已经犯过两次**（`ComicEpilogue` 的 `[data-motion='off']`、`PageBackdrop` 的
+`[data-theme='neon']`）。以后只要写 `:global(`，先确认左括号前面没有裸选择器。
+
+**自查办法**：构建后 grep 一遍产物 CSS，看有没有孤零零的 `[data-theme=...]` 或
+`[data-motion=...]` 规则没带后代选择器。
+
+### 另一个隐蔽的坑
+
 `vite-ssg` 的 `includedRoutes` 回调**必须把带 `:` 的路由过滤掉**：
 
 ```ts

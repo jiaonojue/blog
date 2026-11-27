@@ -89,12 +89,20 @@ const style = computed(() => {
 }
 
 /* 夜间主题背景更暗一点，否则霓虹配色压不住 */
-:global([data-theme='neon']) .page-bg-img {
+/*
+ * 【注意这里必须是 :global(整条选择器)】
+ *   Vue 的 scoped 编译只会保留 :global() 括号里的那一段，括号外的部分会被丢掉。
+ *   写成 `:global([data-theme='neon']) .page-bg-img` 的话，
+ *   产物会变成裸的 `[data-theme=neon] { filter: blur(...) }`——
+ *   直接命中 <html>，把整页都糊掉。
+ *   所以整条选择器都要放进 :global() 里。
+ */
+:global([data-theme='neon'] .page-bg-img) {
   filter: blur(3px) saturate(0.9) brightness(0.72);
 }
 
 /* 关掉动效时不要那点呼吸位移 */
-:global([data-motion='off']) .page-bg-img {
+:global([data-motion='off'] .page-bg-img) {
   animation: none;
 }
 
