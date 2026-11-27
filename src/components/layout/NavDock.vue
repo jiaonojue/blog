@@ -1,8 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, nextTick } from 'vue'
 import { navItems, site } from '@/data/site.config'
-import { settings, type ThemeName } from '@/composables/useSettings'
+import { settings, motionEnabled, type ThemeName } from '@/composables/useSettings'
 import { MOYU_TABS, moyuActive, moyuTab, setMoyuTab } from '@/composables/useMoyuZone'
+import {
+  dockSide,
+  setDockSide,
+  DOCK_SIDE_MIN_WIDTH,
+  type DockSide,
+} from '@/composables/useDockSide'
 import SiteMark from '@/components/ui/SiteMark.vue'
 import SearchPanel from '@/components/layout/SearchPanel.vue'
 import { Ellipsis, Settings } from '@lucide/vue'
@@ -14,8 +20,74 @@ const visibleItems = computed(() =>
   navItems.filter((item) => !settings.value.hiddenNav.includes(item.key)),
 )
 
+/* ── 顶栏玩具：停靠位 ─────────────────────────────────────
+ *
+ * 点靠左的栏目，顶栏飞到屏幕左边竖成一条侧栏；靠右同理；
+ * 点中间的栏目或左上角的印章，回到居中。
+ * 真正的移动不是 CSS 过渡，而是 FLIP：先记录旧位置，
+ * 换类让布局瞬间到位，再记录新位置，用 WAAPI 从旧位置飞过去，
+ * 中途带一点空翻——布局永远是对的，动画只负责好看。
+ */
+
+const innerEl = ref<HTMLElement | null>(null)
+
+/** 第 i 个栏目算出它该把顶栏拉到哪一侧 */
+function dockForIndex(i: number, n: number): DockSide {
+  const t = (i + 0.5) / Math.max(1, n)
+  if (t < 0.42) return 'left'
+  if (t > 0.58) return 'right'
+  return 'center'
+}
+
+/** 从旧 rect 飞到新 rect，中途压缩 + 空翻一下 */
+async function flyTo(side: DockSide) {
+  const inner = innerEl.value
+  const canFly = !!inner && motionEnabled.value && window.innerWidth >= DOCK_SIDE_MIN_WIDTH
+  if (!canFly || !inner) {
+    // 玩不了的环境（窄屏 / 动效关）：布局直接换，不做动画
+    setDockSide(side)
+    return
+  }
+  if (dockSide.value === side) return
+
+  const first = inner.getBoundingClientRect()
+  setDockSide(side)
+  await nextTick()
+  await new Promise((r) => requestAnimationFrame(r))
+  const last = inner.getBoundingClientRect()
+
+  // FLIP：让元素看起来"从旧位置出发"。位移按中心点算，缩放按尺寸比算
+  const dx = first.left + first.width / 2 - (last.left + last.width / 2)
+  const dy = first.top + first.height / 2 - (last.top + last.height / 2)
+  const sx = first.width / last.width
+  const sy = first.height / last.height
+
+  inner.animate(
+    [
+      { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy}) rotate(0deg)` },
+      {
+        // 途中收拢一点、翻一个小角度：像纸片被拎起来翻了个面
+        transform: `translate(${dx * 0.28}px, ${dy * 0.26}px) scale(${((1 + sx) / 2) * 0.94}, ${((1 + sy) / 2) * 0.96}) rotate(-6deg)`,
+        offset: 0.55,
+      },
+      { transform: 'translate(0, 0) scale(1, 1) rotate(0deg)' },
+    ],
+    { duration: 720, easing: 'cubic-bezier(0.34, 1.3, 0.48, 1)' },
+  )
+}
+
+/** 点了导航链接：按它在栏目里的位置决定飞往哪一侧 */
+function onNavClick(i: number) {
+  void flyTo(dockForIndex(i, visibleItems.value.length))
+}
+
+/** 点印章回首页：顺便把顶栏送回居中 */
+function onBrandClick() {
+  void flyTo('center')
+}
+
 /*
- * 附录占着视口时，导航整体换成附录的四个栏目。
+ * 附录占着视口时，导航整体换成附录的五个栏目。
  *
  * 【为什么不是"多出一行"】
  *   胶囊里塞不下两套链接。既然读者此刻不在读正文，
@@ -50,10 +122,18 @@ const currentTheme = computed(
     这是"从正文翻到附录"这件事在界面上的那一下：位置变了，内容也变了，
     读者立刻知道自己在另一叠纸上。
   -->
-  <nav class="nav-dock" :class="{ 'is-appendix': moyuActive }" aria-label="主导航">
+  <nav
+    class="nav-dock"
+    :class="{
+      'is-appendix': moyuActive,
+      'is-left': !moyuActive && dockSide === 'left',
+      'is-right': !moyuActive && dockSide === 'right',
+    }"
+    aria-label="主导航"
+  >
     <!-- 桌面：悬浮胶囊 -->
-    <div class="dock-inner">
-      <RouterLink to="/" class="dock-brand" aria-label="回到首页">
+    <div ref="innerEl" class="dock-inner">
+      <RouterLink to="/" class="dock-brand" aria-label="回到首页" @click="onBrandClick">
         <SiteMark :size="26" />
       </RouterLink>
 
@@ -67,10 +147,12 @@ const currentTheme = computed(
         -->
         <li class="dock-slot" :class="{ 'is-off': moyuActive }" :inert="moyuActive">
           <RouterLink
-            v-for="item in visibleItems"
+            v-for="(item, i) in visibleItems"
             :key="item.key"
             :to="item.path"
             class="dock-link"
+            :style="{ '--i': i }"
+            @click="onNavClick(i)"
           >
             {{ item.label }}
           </RouterLink>
@@ -206,6 +288,76 @@ const currentTheme = computed(
 .nav-dock.is-appendix .dock-inner {
   background: color-mix(in srgb, var(--surface) 92%, var(--accent) 5%);
   border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+}
+
+/* ── 顶栏玩具：停靠到屏幕两侧，竖成一条侧栏 ───────────────
+ *
+ * 【布局为什么不用过渡】
+ *   横胶囊变竖侧栏是布局变化（宽高、排列方向），
+ *   width / flex-direction 都不能平滑过渡。
+ *   所以布局切换是瞬间的，"飞过去"这件事交给脚本里的
+ *   FLIP 动画（见 flyTo）：先量旧位置，切换，量新位置，
+ *   再从旧位置飞到新位置。布局永远正确，动画只负责好看。
+ *
+ * 【为什么只在宽屏生效】
+ *   1366px 以下正文会顶到屏幕边，竖在旁边的侧栏会压住标题。
+ *   脚本里拦了宽度，这里再兜一层：窄屏就算类名挂上了也不显示异常——
+ *   类名本来就挂不上（脚本不放行）。
+ */
+.nav-dock.is-left {
+  justify-content: flex-start;
+}
+
+.nav-dock.is-right {
+  justify-content: flex-end;
+}
+
+/* 竖侧栏本体：从横胶囊变成一条书签带 */
+.nav-dock.is-left .dock-inner,
+.nav-dock.is-right .dock-inner {
+  flex-direction: column;
+  height: auto;
+  width: 76px;
+  padding: 10px 8px;
+  gap: 6px;
+  /* 书签带的角比胶囊方正一点，但它还是"纸"做的 */
+  border-radius: 18px;
+}
+
+/* 分隔线躺下来 */
+.nav-dock.is-left .dock-divider,
+.nav-dock.is-right .dock-divider {
+  width: 24px;
+  height: 1px;
+  margin-inline: 0;
+}
+
+/* 链接竖着排。悬停横线转到字底下不变，底色逻辑原样生效 */
+.nav-dock.is-left .dock-links,
+.nav-dock.is-right .dock-links {
+  padding-block: 0;
+  margin-block: 0;
+  overflow: visible;
+}
+
+.nav-dock.is-left .dock-slot,
+.nav-dock.is-right .dock-slot {
+  flex-direction: column;
+  gap: 0;
+}
+
+.nav-dock.is-left .dock-link,
+.nav-dock.is-right .dock-link {
+  padding: 7px 0;
+  text-align: center;
+}
+
+/* 侧栏状态下，当前页的胶囊底色收窄成一行一小块，跟横排时同宽 */
+.nav-dock.is-left .dock-link.router-link-exact-active,
+.nav-dock.is-right .dock-link.router-link-exact-active,
+.nav-dock.is-left .dock-link.is-moyu-current,
+.nav-dock.is-right .dock-link.is-moyu-current {
+  border-radius: var(--r-pill);
 }
 
 .dock-brand {

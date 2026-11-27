@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { site } from '@/data/site.config'
 import { useSeo } from '@/composables/useSeo'
 import {
@@ -9,6 +9,7 @@ import {
   gallery,
   categoryLabel,
   withBase,
+  type Post,
 } from '@/composables/useContent'
 import { settings, motionEnabled } from '@/composables/useSettings'
 import { pageOf, pad2, isRead } from '@/composables/useBook'
@@ -64,6 +65,163 @@ const selfNote = '这里放着我正在看的东西、踩过的坑，和一些�
  * 于是窄屏会断成"看番、写码、/ 随手记一点什么"，而不是从词中间劈开。
  */
 const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B')
+
+/* ══ 目次悬浮预览 ═══════════════════════════════════════════
+ * 鼠标扫过目次的一行，一张小卡片从光标旁边浮起来：
+ * 封面、标题、两行摘要、页码。卡片不跟得死死的——
+ * 用缓动追光标，横向速度换成倾斜角，像一张被拎起来
+ * 又被放下的小纸片。
+ *
+ * 【只在鼠标环境生效】触屏没有 hover，预览没有意义；
+ * prefers-reduced-motion / 站内动效关闭时也不出现。
+ */
+const previewPost = ref<Post | null>(null)
+const previewEl = ref<HTMLElement | null>(null)
+const previewOn = ref(false)
+
+const pvFine = () =>
+  motionEnabled.value &&
+  typeof matchMedia !== 'undefined' &&
+  matchMedia('(hover: hover) and (pointer: fine)').matches
+
+/* 目标位置（光标）/ 当前位置（缓动追）/ 上一帧位置（算速度） */
+let pvTX = 0
+let pvTY = 0
+let pvX = 0
+let pvY = 0
+let pvLast = 0
+let pvRaf = 0
+
+function pvTick(now: number) {
+  const el = previewEl.value
+  if (!el) {
+    pvRaf = 0
+    return
+  }
+  const dt = Math.min(48, now - (pvLast || now))
+  pvLast = now
+  // 缓动系数按帧长归一：掉帧时也不会突然跳
+  const k = 1 - Math.pow(0.0016, dt / 1000)
+  const prevX = pvX
+  pvX += (pvTX - pvX) * k
+  pvY += (pvTY - pvY) * k
+  // 横向速度 → 倾斜。速度越大纸片越"甩"
+  const vx = pvX - prevX
+  const rot = Math.max(-10, Math.min(10, vx * 0.28))
+  // 锚点取光标右侧、垂直居中的位置：卡片悬浮在行旁边，不盖住正扫着的那几行
+  el.style.transform = `translate(${pvX + 26}px, ${pvY - 140}px) rotate(${rot}deg)`
+  pvRaf = requestAnimationFrame(pvTick)
+}
+
+function pvStart() {
+  if (!pvRaf) {
+    pvLast = 0
+    pvRaf = requestAnimationFrame(pvTick)
+  }
+}
+
+function pvStop() {
+  if (pvRaf) {
+    cancelAnimationFrame(pvRaf)
+    pvRaf = 0
+  }
+}
+
+function onRowEnter(e: MouseEvent, post: Post) {
+  if (!pvFine()) return
+  previewPost.value = post
+  previewOn.value = true
+  pvTX = pvX = e.clientX
+  pvTY = pvY = e.clientY
+  pvStart()
+}
+
+function onRowMove(e: MouseEvent) {
+  pvTX = e.clientX
+  pvTY = e.clientY
+}
+
+function onRowLeave() {
+  previewOn.value = false
+  previewPost.value = null
+  pvStop()
+}
+
+/* ══ 胶带相册：跟着滚动跑 ═══════════════════════════════════
+ * 相册条带本来匀速滚动。现在滚动页面的速度会注入给它：
+ * 滑得越快它跑得越快，停手它就慢慢匀速回来。
+ * 方向不变——改变方向会跳帧，变速才是顺滑的。
+ */
+const stripTrack = ref<HTMLElement | null>(null)
+let stripRate = 1
+let stripTarget = 1
+let stripRaf = 0
+
+function stripTick() {
+  stripRate += (stripTarget - stripRate) * 0.08
+  // 每次都往 1 收：滚动的冲动过去之后回到匀速
+  stripTarget += (1 - stripTarget) * 0.05
+  const anims = stripTrack.value?.getAnimations() ?? []
+  for (const a of anims) a.updatePlaybackRate?.(stripRate)
+  if (Math.abs(stripRate - 1) > 0.01 || Math.abs(stripTarget - 1) > 0.01) {
+    stripRaf = requestAnimationFrame(stripTick)
+  } else {
+    stripRate = stripTarget = 1
+    for (const a of anims) a.updatePlaybackRate?.(1)
+    stripRaf = 0
+  }
+}
+
+/* ══ 卡组景深 ═══════════════════════════════════════════════
+ * 「最近在写」的三张卡片下面是一整块舞台。
+ * 这一块滚进视口的过程中，整块平面从"稍微后仰"的角度
+ * 慢慢立正（rotateX 7° → 0°）。滚动进度写进 CSS 变量，
+ * 变换本身留在 CSS 里算。
+ */
+const postGrid = ref<HTMLElement | null>(null)
+
+let scrollRaf = 0
+function onScrollFrame() {
+  scrollRaf = 0
+  const grid = postGrid.value
+  if (grid) {
+    const r = grid.getBoundingClientRect()
+    const vh = window.innerHeight
+    // 从"刚露头"到"过了视口 40%"之间走完立正
+    const p = Math.max(0, Math.min(1, (vh - r.top) / (vh * 0.6)))
+    grid.style.setProperty('--p', p.toFixed(3))
+  }
+}
+
+function onScroll() {
+  if (!scrollRaf) scrollRaf = requestAnimationFrame(onScrollFrame)
+  if (motionEnabled.value && !stripRaf) stripRaf = requestAnimationFrame(stripTick)
+}
+
+let lastY = 0
+function onScrollRaw() {
+  // 变速的"冲动"来自滚动位移本身
+  const y = window.scrollY
+  const dy = Math.abs(y - lastY)
+  lastY = y
+  if (dy > 2) {
+    stripTarget = Math.min(3.4, 1 + dy * 0.03)
+    if (motionEnabled.value && !stripRaf) stripRaf = requestAnimationFrame(stripTick)
+  }
+  onScroll()
+}
+
+onMounted(() => {
+  if (!motionEnabled.value) return
+  window.addEventListener('scroll', onScrollRaw, { passive: true })
+  onScrollRaw()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScrollRaw)
+  pvStop()
+  if (stripRaf) cancelAnimationFrame(stripRaf)
+})
 </script>
 
 <template>
@@ -121,7 +279,7 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
         </header>
       </RevealOnScroll>
 
-      <div class="post-grid">
+      <div ref="postGrid" class="post-grid">
         <RevealOnScroll v-for="(post, i) in topPosts" :key="post.path" :delay="i * 80">
           <PostCard :post="post" :tilt="i === 1 ? 0.7 : i === 2 ? -0.6 : 0" />
         </RevealOnScroll>
@@ -175,7 +333,7 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
 
     <!-- ══ 相册条带 ════════════════════════════════════════ -->
     <section v-if="galleryStrip.length >= 3" class="gallery-strip-section">
-      <div class="strip-track" :class="{ 'is-animated': motionEnabled }">
+      <div ref="stripTrack" class="strip-track" :class="{ 'is-animated': motionEnabled }">
         <!-- 复制一份实现无缝滚动 -->
         <template v-for="pass in 2" :key="pass">
           <RouterLink
@@ -227,7 +385,13 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
       <RevealOnScroll>
         <ol class="contents">
           <li v-for="post in posts" :key="post.path" class="contents-row">
-            <RouterLink :to="post.path" class="row-link">
+            <RouterLink
+              :to="post.path"
+              class="row-link"
+              @mouseenter="onRowEnter($event, post)"
+              @mousemove="onRowMove"
+              @mouseleave="onRowLeave"
+            >
               <span class="row-page">{{ pad2(pageOf(post.path)) }}</span>
               <span class="row-title">{{ post.title }}</span>
               <span class="row-leader" aria-hidden="true" />
@@ -292,6 +456,40 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
     <!-- ══ 附录：摸鱼分区 ══════════════════════════════════ -->
     <!-- 正文结束了，后面还有几页附录 —— 一本同人志本来就是这样装订的 -->
     <MoyuZone />
+
+    <!--
+      ══ 目次悬浮预览 ════════════════════════════════════
+      常驻在 body 末尾的一张小卡片，只有扫过目次时才亮。
+      transform 由脚本逐帧写（见 pvTick），这里只管内容与外观。
+      aria-hidden：它跟着光标走，读屏用户用不上，目次本身已经把信息读全了。
+    -->
+    <div
+      ref="previewEl"
+      class="toc-preview"
+      :class="{ 'is-on': previewOn }"
+      aria-hidden="true"
+      data-pagefind-ignore
+    >
+      <template v-if="previewPost">
+        <div class="toc-preview-cover">
+          <img
+            v-if="previewPost.cover"
+            :src="withBase(previewPost.cover)"
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+          <span v-else class="toc-preview-fallback">{{ previewPost.title.slice(0, 1) }}</span>
+        </div>
+        <p class="toc-preview-title">{{ previewPost.title }}</p>
+        <p class="toc-preview-summary">{{ previewPost.summary }}</p>
+        <p class="toc-preview-meta">
+          <span>P.{{ pad2(pageOf(previewPost.path)) }}</span>
+          <span>{{ categoryLabel(previewPost.category) }}</span>
+          <span>{{ previewPost.minutes }} 分</span>
+        </p>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -520,10 +718,19 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
 }
 
 /* ── 文章网格：1 / 2 / 3 列自适应 ──────────────────────── */
+/*
+ * 卡组景深：滚进来之前整块平面稍微后仰（rotateX），
+ * 滚动进度 --p 由脚本写进元素（见 onScrollFrame），
+ * 从 0 走到 1，平面随之立正。窄屏与动效关闭时脚本不写 --p，
+ * 默认值 1 = 完全立正，等于没有这一层。
+ */
 .post-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 22px;
+  transform: perspective(1400px) rotateX(calc((1 - var(--p, 1)) * 7deg))
+    translateZ(calc((1 - var(--p, 1)) * -70px));
+  transform-origin: 50% 100%;
 }
 
 @media (max-width: 1023px) {
@@ -790,6 +997,102 @@ const heroTagline = site.tagline.replace(/([、，。！？：；])/g, '$1\u200B
 .row-link:hover {
   background: var(--bg-soft);
   padding-left: 10px;
+}
+
+/* ── 目次悬浮预览卡 ─────────────────────────────────────── */
+/*
+ * 一张跟着光标走的小卡片。
+ * 位置 transform 由脚本逐帧写（pvTick），这里只负责外观：
+ * 出现/消失用 opacity + scale 的过渡，位移不参与过渡——
+ * 位移是缓动追出来的，再叠一层过渡就会糊成一团。
+ */
+.toc-preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-drawer);
+  width: 236px;
+  padding: 10px;
+  border-radius: var(--r-input);
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: var(--shadow-lift);
+  pointer-events: none;
+  opacity: 0;
+  scale: 0.88;
+  transform-origin: 0 100%;
+  transition:
+    opacity 200ms var(--ease-out),
+    scale 220ms var(--ease-out);
+}
+
+.toc-preview.is-on {
+  opacity: 1;
+  scale: 1;
+}
+
+.toc-preview-cover {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  display: grid;
+  place-items: center;
+}
+
+.toc-preview-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.toc-preview-fallback {
+  font-family: var(--font-display);
+  font-size: 34px;
+  color: var(--ink-soft);
+  opacity: 0.5;
+}
+
+.toc-preview-title {
+  margin-top: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.toc-preview-summary {
+  margin-top: 4px;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.toc-preview-meta {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+/* 触屏上永不出现（脚本已经拦了，这里再兜一层） */
+@media (hover: none), (pointer: coarse) {
+  .toc-preview {
+    display: none;
+  }
 }
 
 .row-page {

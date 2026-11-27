@@ -243,10 +243,11 @@ onUnmounted(() => {
  */
 .quiet-girl {
   position: absolute;
-  bottom: 34px;
-  width: clamp(130px, 14vw, 190px);
+  right: 14%;
+  bottom: 18px;
+  width: clamp(120px, 12vw, 170px);
   height: auto;
-  opacity: 0.5;
+  opacity: 0.55;
   pointer-events: none;
 }
 

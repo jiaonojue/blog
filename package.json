@@ -22,7 +22,7 @@
     "check:assets": "node scripts/check-assets.mjs",
     "images": "node scripts/run-py.mjs scripts/optimize-images.py",
     "fonts": "node scripts/run-py.mjs scripts/subset-font.py",
-    "novel": "node scripts/build-novel.mjs && node scripts/run-py.mjs scripts/optimize-novel-images.py",
+    "novel": "node scripts/novel.mjs",
     "novel:images": "node scripts/run-py.mjs scripts/optimize-novel-images.py",
     "new:post": "node scripts/new-post.mjs"
   },

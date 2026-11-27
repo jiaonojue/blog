@@ -442,22 +442,22 @@ watch(moyuTab, () => {
 /* ── 看板娘 ─────────────────────────────────────────────── */
 .moyu-girl {
   position: absolute;
-  right: clamp(6px, 2.5vw, 44px);
-  bottom: 0;
+  /*
+   * 故意往分区外探出去一截：右、下两条硬边被 overflow: hidden 裁掉，
+   * 露出来的只有左上那一侧——那一侧图里已经烘焙了羽化，
+   * 于是她看起来是从纸的边缘探出身子，而不是一张贴上去的照片。
+   */
+  right: -56px;
+  bottom: -64px;
   /* 排在背景光效之上、正文之下（.moyu-inner 是 z-index: 1） */
   z-index: 0;
-  width: clamp(150px, 15vw, 235px);
+  width: clamp(190px, 18vw, 280px);
   height: auto;
   pointer-events: none;
   user-select: none;
-  opacity: 0.92;
+  opacity: 0.94;
   /* 附录的暗场比原图暗半档，跟着压一点 */
   filter: saturate(1.02) brightness(0.94);
-  /*
-   * 图本身已经烘焙了椭圆羽化的透明通道（见 public/art/girls/ 的处理），
-   * 这里不再用 CSS mask——烘焙的羽化在导出时就定死了形状，
-   * 比运行时遮罩可靠，也不会有浏览器渲染差异。
-   */
 }
 
 @media (max-width: 1023px) {

@@ -167,6 +167,49 @@ flowchart TD
 `scripts/subset-font.py` 扫描 `content/` 和 `src/` 里实际出现的每一个字，
 只保留用到的字形，体积降到 100-300 KB。代价是新增生僻字后要重跑 `npm run fonts`。
 
+## 全站配色过渡（@property）
+
+主题切换、滑进摸鱼分区时整页的底色/墨色/描边是**渐变**过去的，不是瞬间替换：
+
+1. `tokens.css` 用 `@property` 把 `--bg` `--ink` `--line` 等十几个变量
+   登记成 `<color>` 类型——普通 CSS 变量只是一串字符，登记后浏览器才能插值
+2. `base.css` 在 `html` 上挂一条 `transition: --bg 520ms, ...`
+3. 变量在 `<html>` 上被换掉（`data-theme` 或 `data-zone` 切换）时，
+   因为变量是**继承**的，整棵树每帧拿到的都是中间值 → 全站一起淡过去
+
+摸鱼分区的暗场是**独立于主题的第三层**（`html[data-zone='moyu']`），
+写在两套主题之后靠"后者胜"覆盖——"看到哪儿"决定暗场，"访客选了什么"决定主题，互不干扰。
+
+不支持 `@property` 的浏览器整段忽略，退回瞬间切换——不会坏，只是没有过渡。
+
+## 摸鱼分区与在线小说
+
+首页滑到底的附录区（`MoyuZone.vue`）懒挂载五块内容，用 `IntersectionObserver` +
+轮询兜底（嵌入式 WebView 里 IO 不可靠，见组件注释）。
+
+**小说管线**（`scripts/novel.mjs` → `build-novel.mjs` + `optimize-novel-images.py`）：
+
+```
+EPUB ──解包──> OPF/NCX ──白名单清洗──> public/novels/<slug>/ch-N.html
+                                        └─ index.json + books.json（书架）
+TXT  ──按「第X章/番外」分节──> 同上（GBK 自动转 UTF-8）
+原图 ──raw/novels/<slug>/img/──> Pillow 转 WebP（质量自适应）
+```
+
+阅读器（`NovelReader.vue`）运行时 fetch 章节，CSS 多列分页（一列 = 一页），
+进度按 slug 存 `localStorage`。书架来自 `books.json`，≥2 本书时显示切换器。
+
+**便条板**（`NoteBoard.vue` + `useNotes.ts`）：纯静态站没有后端，跨设备走
+ntfy.sh 公共中转。主题名 = SHA-256(密钥) 的前 40 位——密钥不出现在任何 URL，
+算不出主题名就读不到消息。上限三条由客户端在拉取后主动 DELETE 旧消息实现。
+
+## 顶栏玩具
+
+`NavDock.vue` 点靠左的栏目飞到屏幕左侧、靠右的飞到右侧，变成竖排侧栏
+（仅 ≥1366px）。动画是 **FLIP**：记旧位置 → 换类让布局瞬间到位 → 记新位置 →
+WAAPI 从旧位置飞过去，中途带压缩和 6° 空翻。停靠位存模块级 ref，
+SPA 会话内跨路由保留，刷新回中。窄屏 / 动效关闭 / 摸鱼分区（底部停靠）时让位。
+
 ---
 
 ## 三个"同人志"设定

@@ -62,6 +62,15 @@ interface BookIndex {
   totalChars: number
 }
 
+/** 书架里的一本：books.json 里的简要信息 */
+interface BookBrief {
+  slug: string
+  title: string
+  authors: string[]
+  chapters: number
+  chars: number
+}
+
 const props = withDefaults(
   defineProps<{
     /** 书的短名，对应 public/novels/<slug>/ */
@@ -75,7 +84,14 @@ function base(path: string): string {
   return `${b}${path.startsWith('/') ? path : `/${path}`}`
 }
 
-const bookDir = computed(() => base(`/novels/${props.slug}`))
+/*
+ * 当前读的是哪一本。props.slug 只是"默认这本"；
+ * 书架（books.json）里如果登记了不止一本，读者可以换，
+ * 换过之后这里就不再是 props 的值。
+ */
+const slug = ref(props.slug)
+
+const bookDir = computed(() => base(`/novels/${slug.value}`))
 
 /* ── 状态 ───────────────────────────────────────────────── */
 
@@ -84,6 +100,9 @@ const loading = ref(true)
 /** 这本书在本地构建过吗。false = 线上没带正文，不是错误 */
 const missing = ref(false)
 const loadError = ref('')
+
+/** 书架：public/novels/books.json，构建脚本每次跑完都会重写 */
+const shelf = ref<BookBrief[]>([])
 
 const currentNo = ref(1)
 const chapterHtml = ref('')
@@ -318,7 +337,7 @@ function saveProgress() {
   const ratio = views > 1 ? view / (views - 1) : 0
   try {
     const all = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Record<string, Saved>
-    all[props.slug] = { no: currentNo.value, ratio }
+    all[slug.value] = { no: currentNo.value, ratio }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
   } catch {
     /* 隐私模式下写不进去，本轮仍然能读 */
@@ -328,7 +347,7 @@ function saveProgress() {
 function readSaved(): Saved | null {
   try {
     const all = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Record<string, Saved>
-    const hit = all[props.slug]
+    const hit = all[slug.value]
     if (hit && Number.isInteger(hit.no) && hit.no > 0) return hit
   } catch {
     /* 数据坏了就当没存过 */
@@ -541,6 +560,42 @@ watch(viewport, (el) => {
   if (el) ro?.observe(el)
 })
 
+/**
+ * 取书架。
+ *
+ * 【为什么有书架】
+ *   public/novels/ 下可以放不止一本书（npm run novel 每跑一次
+ *   就登记一本）。books.json 是构建脚本维护的总目录，
+ *   阅读器拿它来在目录抽屉顶部列出"这一架上都有什么"。
+ *
+ * 【取不到怎么办】
+ *   books.json 不存在（一本都没构建过、或者还是老版本目录结构）
+ *   就当书架是空的——单书状态下抽屉里不显示这一块，一切照旧。
+ */
+async function loadShelf() {
+  try {
+    const res = await fetch(base('/novels/books.json'))
+    if (!res.ok) return
+    const data = (await res.json()) as { books?: BookBrief[] }
+    shelf.value = (data.books ?? []).filter((b) => b && b.slug && b.title)
+  } catch {
+    /* 书架拉不到不碍事：照常读默认那一本 */
+  }
+}
+
+/** 换一本。进度按书分键存着，换回来还在原来的位置 */
+async function switchBook(next: string) {
+  if (next === slug.value || !next) return
+  saveProgress()
+  htmlCache.clear()
+  index.value = null
+  currentNo.value = 1
+  page.value = 0
+  slug.value = next
+  tocOpen.value = false
+  await loadIndex()
+}
+
 onMounted(async () => {
   mql = window.matchMedia('(min-width: 1024px)')
   syncWide()
@@ -554,6 +609,7 @@ onMounted(async () => {
     if (viewport.value) ro.observe(viewport.value)
   }
 
+  void loadShelf()
   await loadIndex()
 })
 
@@ -568,12 +624,14 @@ onUnmounted(() => {
   saveProgress()
 })
 
-// 换书（理论上只有一个，但留着不亏）
+// 外部把 slug 换了（罕见，目前没有这样的调用方）：跟着换书
 watch(
   () => props.slug,
-  () => {
+  (next) => {
+    if (!next || next === slug.value) return
     htmlCache.clear()
     index.value = null
+    slug.value = next
     void loadIndex()
   },
 )
@@ -662,6 +720,30 @@ function isCurrent(no: number): boolean {
             {{ Math.round(index.totalChars / 1000) }}k 字
           </p>
         </div>
+
+        <!--
+          书架：架上有两本以上的书才出现。
+          登记来自 public/novels/books.json，构建脚本每次跑完都会重写它。
+        -->
+        <div v-if="shelf.length > 1" class="shelf" role="group" aria-label="书架">
+          <p class="shelf-label">书架</p>
+          <button
+            v-for="b in shelf"
+            :key="b.slug"
+            type="button"
+            class="shelf-item"
+            :class="{ 'is-current': b.slug === slug }"
+            :aria-current="b.slug === slug ? 'true' : undefined"
+            @click="switchBook(b.slug)"
+          >
+            <span class="shelf-title">{{ b.title }}</span>
+            <span class="shelf-meta">
+              {{ b.authors.join(' / ') || '未署名' }} · {{ b.chapters }} 节 ·
+              {{ Math.round(b.chars / 1000) }}k 字
+            </span>
+          </button>
+        </div>
+
         <ol class="toc-list">
           <li v-for="c in index.chapters" :key="c.no">
             <button
@@ -1179,6 +1261,59 @@ function isCurrent(no: number): boolean {
   font-family: var(--font-mono);
   font-size: 10px;
   line-height: 1.6;
+  color: var(--text-soft);
+}
+
+/* ── 书架：目录抽屉顶上那一小块 ─────────────────────────── */
+.shelf {
+  flex: 0 0 auto;
+  padding: 10px 10px 4px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.shelf-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin-bottom: 6px;
+}
+
+.shelf-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px;
+  border-radius: var(--r-input);
+  border: 1px solid transparent;
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
+}
+
+.shelf-item:hover {
+  background: color-mix(in srgb, var(--mark) 8%, transparent);
+}
+
+/* 正在读的那本：描一圈章色，像书架上抽出来一半的那本 */
+.shelf-item.is-current {
+  border-color: var(--mark);
+  background: color-mix(in srgb, var(--mark) 10%, transparent);
+}
+
+.shelf-title {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.shelf-meta {
+  display: block;
+  margin-top: 1px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
   color: var(--text-soft);
 }
 
