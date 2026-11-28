@@ -326,7 +326,12 @@ async function loadAbout() {
 }
 
 /**
- * 读仓库根目录的 CHANGELOG.md，渲染成 /changelog 页。
+ * 读仓库根目录的 CHANGELOG.md，拆成一"話一話"的目次，渲染成 /changelog 页。
+ *
+ * 【为什么要拆而不是整段塞进去】
+ *   整段 HTML 只能做成一长条后台文档。拆成版本之后，每條能印上話号、
+ *   版本胶带和日期，分类（修复 / 新增）也能做成和纸小标签——
+ *   这才是这块站点"同人志目次"的样子。
  *
  * 【为什么走构建期而不是运行时】
  *   Markdown 渲染器（Shiki 高亮、标题 id、外链 target）已经在这里配好了，
@@ -335,11 +340,74 @@ async function loadAbout() {
  */
 async function loadChangelog() {
   const file = join(ROOT, 'CHANGELOG.md')
-  if (!existsSync(file)) return { html: '', updated: '' }
+  const empty = { html: '', updated: '', entries: [] }
+  if (!existsSync(file)) return empty
   const { data, content } = matter(readFileSync(file, 'utf8'))
+
+  // 按 `## [版本号] — 日期` 切段。段前的引言单独留着（顶部那两行说明）。
+  const lines = content.split(/\r?\n/)
+  const introLines = []
+  const sections = []
+  let current = null
+  for (const line of lines) {
+    const m = line.match(/^##\s+\[([^\]]+)\]\s*[—–-]\s*(\d{4}-\d{2}-\d{2})\s*$/)
+    if (m) {
+      current = { version: m[1].trim(), date: m[2].trim(), body: [] }
+      sections.push(current)
+    } else if (current) {
+      current.body.push(line)
+    } else {
+      introLines.push(line)
+    }
+  }
+
+  const entries = []
+  for (const [i, sec] of sections.entries()) {
+    // 每話里按 `### 分类` 切成小节，小节正文单独渲染成 HTML。
+    const bodyLines = sec.body
+    const groups = []
+    let lead = []
+    let group = null
+    for (const line of bodyLines) {
+      const h = line.match(/^###\s+(.+?)\s*$/)
+      if (h) {
+        group = { label: h[1].trim(), html: '' }
+        groups.push(group)
+      } else if (group) {
+        group.html += `${line}\n`
+      } else if (line.trim()) {
+        lead.push(line)
+      }
+    }
+
+    const categorized = await Promise.all(
+      groups.map(async (g) => ({
+        label: g.label,
+        html: await md.renderAsync(g.html.trim()),
+      })),
+    )
+
+    entries.push({
+      // 倒序的話号：最新一条是第 1 話，往下递增
+      chapter: i + 1,
+      version: sec.version,
+      date: sec.date,
+      lead: await md.renderAsync(lead.join('\n').trim()),
+      groups: categorized,
+    })
+  }
+
+  // 引言里的 `# 更新记录` 和 `---` 去掉——页面自己有 h1 和分隔线，别重复
+  const introText = introLines
+    .join('\n')
+    .replace(/^#\s+.*$/m, '')
+    .replace(/^---\s*$/m, '')
+    .trim()
+
   return {
-    html: await md.renderAsync(content),
+    html: await md.renderAsync(introText),
     updated: data.updated ? toDateString(data.updated) : '',
+    entries,
   }
 }
 

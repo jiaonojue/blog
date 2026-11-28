@@ -78,7 +78,17 @@ export interface ContentIndex {
   tools: Tool[]
   now: { html: string; updated: string }
   about: { html: string; qa: QaItem[]; timeline: TimelineItem[] }
-  changelog: { html: string; updated: string }
+  changelog: {
+    html: string
+    updated: string
+    entries: {
+      chapter: number
+      version: string
+      date: string
+      lead: string
+      groups: { label: string; html: string }[]
+    }[]
+  }
 }
 
 /** 文章正文表：键是文章 path，值是渲染好的 HTML */

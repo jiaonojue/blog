@@ -965,10 +965,15 @@ git push
 2. 改 `package.json` 的 `version` 和 `src/components/layout/SettingsPanel.vue` 里的 `const version`，
    让设置抽屉显示的版本号跟上
 
-**它怎么上站的**：`scripts/build-content-index.mjs` 里的 `loadChangelog()` 会把这个文件渲染进
-`src/generated/content.json`，`src/pages/Changelog.vue` 再读出来。和 Now / 关于页是同一条管线，
+**它怎么上站的**：`scripts/build-content-index.mjs` 里的 `loadChangelog()` 会按
+`## [版本号] — 日期` 把文件切成一"話一話"，每話再按 `### 分类` 分组，分别渲染成 HTML，
+写进 `src/generated/content.json` 的 `changelog.entries`。`src/pages/Changelog.vue`
+把每話排成目次条目：話号 + 版本胶带 + 日期 + 分类小标签 + 条目。和 Now / 关于页是同一条管线，
 代码高亮、标题锚点都有。改完 `CHANGELOG.md` 跑一次 `npm run dev` 或 `npm run build` 就能看到，
 不需要手动碰 `src/generated/`。
+
+> **写法约定**：版本行必须是 `## [版本号] — 日期`（日期是 `YYYY-MM-DD`），
+> 分类行必须是 `### 分类名`。这两行是切段的锚点，写错了那一段会并进上一条。
 
 > 这一页不在主导航里（用户要求设置里默认隐藏），所以要在设置抽屉里点进去。
 > 新增改动时记得同步 `CHANGELOG.md`——这是站点的编年史，别让它停在旧版本。

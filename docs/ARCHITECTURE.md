@@ -75,10 +75,12 @@ flowchart TD
 这一步在 `npm run dev` 和 `npm run build` 开始时都会自动跑。
 
 **更新日志不走 `content/` 目录**，而是直接读仓库根目录的 `CHANGELOG.md`。
-`loadChangelog()` 用同一套 Markdown + Shiki 管线把它渲染成 HTML，
-塞进 `content.json` 的 `changelog` 字段（`{ html, updated }`）。
-`/changelog` 页在 `setup` 里同步取用，所以预渲染出来的 HTML 已经带完整正文，
-不需要像文章页那样在 `onServerPrefetch` 里单独取。
+`loadChangelog()` 按 `## [版本号] — 日期` 切成一"話一話"，每話再按 `### 分类` 分组，
+用同一套 Markdown + Shiki 管线分别渲染，写进 `content.json` 的 `changelog.entries`
+（每話含話号、版本、日期、`lead` 引言、分类 `groups`）。
+页面把每話排成同人志目次：話号 + 引导点 + 版本胶带 + 分类小标签 + 条目，
+跟文章列表的目次视图是同一副骨架。`/changelog` 页在 `setup` 里同步取用，
+所以预渲染出来的 HTML 已经带完整正文，不需要像文章页那样在 `onServerPrefetch` 里单独取。
 
 ### 阶段二：预渲染（`vite-ssg`）
 
@@ -146,8 +148,8 @@ flowchart TD
 ```
 
 数据来源只有一个：`content.json`（已打包进 JS）。
-文章正文通过动态 `import()` 单独加载；更新日志正文则同步放在 `content.json`
-的 `changelog.html` 里（因为它只有一份，不值得单独拆一个 JSON）。
+文章正文通过动态 `import()` 单独加载；更新日志则同步放在 `content.json`
+的 `changelog.entries` 里（因为它只有一份，不值得单独拆一个 JSON）。
 
 `/changelog` 不在主导航里，入口收在设置抽屉「关于」组的折叠块中，
 默认合上，不占抽屉的地方。`postbuild.mjs` 会把它加进 sitemap。
