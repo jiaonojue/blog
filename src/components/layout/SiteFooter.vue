@@ -44,6 +44,8 @@ const footerLinks = computed(() =>
           <RouterLink v-for="item in footerLinks" :key="item.key" :to="item.path">
             {{ item.label }}
           </RouterLink>
+          <!-- 更新日志不在主导航里，但在页脚留个直达口，免得要在设置里翻半天 -->
+          <RouterLink to="/changelog">更新日志</RouterLink>
         </nav>
       </div>
 

@@ -522,7 +522,7 @@
           },
           {
             "label": "新增",
-            "html": "<ul>\n<li><strong>更新日志独立成页</strong>（<code>/changelog</code>）：<code>CHANGELOG.md</code> 由构建期渲染进 <code>content.json</code>，\n和 now / about 同一条管线（Shiki 高亮、标题 id 都有）。设置抽屉里的入口改成默认折叠的\n<code>&lt;details&gt;</code>，展开是一条能点进独立页的链接，不再放写死的占位文案。sitemap 同步收录</li>\n<li>日志页做成同人志目次：每話一个版本，带話号、引导点、版本胶带、日期，\n修复 / 新增等分类做成和纸小标签；标题逐字点亮，跟文章目次是同一副骨架，\n不再是一长条后台文档</li>\n</ul>\n"
+            "html": "<ul>\n<li><strong>更新日志独立成页</strong>（<code>/changelog</code>）：<code>CHANGELOG.md</code> 由构建期渲染进 <code>content.json</code>，\n和 now / about 同一条管线（Shiki 高亮、标题 id 都有）。设置抽屉里的入口改成默认折叠的\n<code>&lt;details&gt;</code>，展开是一条能点进独立页的链接，不再放写死的占位文案。sitemap 同步收录</li>\n<li>日志页做成同人志目次：每話一个版本，带話号、引导点、版本胶带、日期，\n修复 / 新增等分类做成和纸小标签；标题逐字点亮，跟文章目次是同一副骨架，\n不再是一长条后台文档</li>\n<li>全站页脚加「更新日志」直达链接：原来只能从设置抽屉里翻进去，\n现在每页滑到底就能点进去，设置里的折叠入口仍保留</li>\n</ul>\n"
           }
         ]
       },
