@@ -53,7 +53,47 @@ export const MAX_NOTES = 3
 /** 密钥存在这里。和站点其他设置分开，清缓存不会顺手清掉它 */
 const KEY_STORAGE = 'site:notes:key'
 
-const SERVER = 'https://ntfy.sh'
+/**
+ * 中转服务器。
+ *
+ * 【为什么要可以换】
+ *   默认是 ntfy.sh 的公共实例。但"跨设备互传"走的是公网中转——
+ *   有的网络环境到 ntfy.sh 不通（被墙、超时），这时板子看起来就是"坏了"。
+ *   换一台能连通的 ntfy 实例（公共镜像或自建），其它什么都不用变：
+ *   密钥、主题名、消息格式全部一样。
+ *
+ *   服务器地址只存在本机 localStorage 里，不进仓库、不上传。
+ */
+const SERVER_STORAGE = 'site:notes:server'
+const DEFAULT_SERVER = 'https://ntfy.sh'
+
+/** 读本机设置的中转服务器（没设置过就是默认的） */
+export function readServer(): string {
+  try {
+    const raw = localStorage.getItem(SERVER_STORAGE) ?? ''
+    // 只认 https:// 开头的地址，防呆
+    return /^https:\/\/[\w.-]+(\/[\w/-]*)?$/.test(raw) ? raw.replace(/\/$/, '') : DEFAULT_SERVER
+  } catch {
+    return DEFAULT_SERVER
+  }
+}
+
+/** 记住中转服务器。空字符串 = 回到默认 */
+export function saveServer(url: string): void {
+  try {
+    const clean = url.trim().replace(/\/$/, '')
+    if (clean) localStorage.setItem(SERVER_STORAGE, clean)
+    else localStorage.removeItem(SERVER_STORAGE)
+  } catch {
+    /* 隐私模式下写不进去，本轮仍然能用 */
+  }
+}
+
+/** 当前用的中转服务器 */
+export function currentServer(): string {
+  if (typeof localStorage === 'undefined') return DEFAULT_SERVER
+  return readServer()
+}
 
 /**
  * 把密钥变成一个主题名。
@@ -135,7 +175,7 @@ function toNote(raw: RawMessage): Note | null {
  *   再自己截到三条。
  */
 export async function fetchNotes(topic: string): Promise<Note[]> {
-  const res = await fetch(`${SERVER}/${topic}/json?poll=1&since=all`, {
+  const res = await fetch(`${currentServer()}/${topic}/json?poll=1&since=all`, {
     headers: { Accept: 'application/json' },
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -160,7 +200,7 @@ export async function fetchNotes(topic: string): Promise<Note[]> {
 
 /** 发一条文字。返回新消息的 id */
 export async function postNote(topic: string, text: string): Promise<string> {
-  const res = await fetch(`${SERVER}/${topic}`, {
+  const res = await fetch(`${currentServer()}/${topic}`, {
     method: 'POST',
     body: text,
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
@@ -188,7 +228,7 @@ export async function postImage(
   filename: string,
   caption = '',
 ): Promise<string> {
-  const res = await fetch(`${SERVER}/${topic}`, {
+  const res = await fetch(`${currentServer()}/${topic}`, {
     method: 'PUT',
     body: file,
     headers: {
@@ -206,7 +246,7 @@ export async function postImage(
 /** 删掉一条。用来维持"最多三条" */
 export async function deleteNote(topic: string, id: string): Promise<void> {
   // 删不掉不算致命：界面上已经把它剔掉了，下次刷新会再试
-  await fetch(`${SERVER}/${topic}/${id}`, { method: 'DELETE' }).catch(() => undefined)
+  await fetch(`${currentServer()}/${topic}/${id}`, { method: 'DELETE' }).catch(() => undefined)
 }
 
 /**

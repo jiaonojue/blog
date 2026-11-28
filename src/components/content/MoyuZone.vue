@@ -30,16 +30,6 @@
 import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { ArrowLeft, ArrowRight } from '@lucide/vue'
 import { MOYU_TABS, moyuActive, moyuTab, setMoyuTab, stepMoyu } from '@/composables/useMoyuZone'
-import { site } from '@/data/site.config'
-
-/*
- * 角落里的看板娘。
- * 部署在 /blog/ 子路径下，图片路径得自己拼上 base。
- */
-const girlUrl = (() => {
-  const b = site.base.endsWith('/') ? site.base.slice(0, -1) : site.base
-  return `${b}/art/girls/moyu-companion.webp`
-})()
 
 /*
  * 五块都异步加载。
@@ -237,25 +227,6 @@ watch(moyuTab, () => {
       <span class="bind-hole" />
     </div>
 
-    <!--
-      缩在角落的看板娘。
-      【为什么放在这一层的中间】她排在背景光效之后、正文之前，
-      所以卡片会遮住她的边缘——是"躲在卡片后面探出身子"，
-      不是"贴在页面上的贴图"。
-      【图的形状】图片文件自带椭圆羽化的透明通道（导出时烘焙好了），
-      四周平滑淡掉，直接贴上去也不会出现矩形边。
-      手机上不显示：375px 宽的卡片后面藏不下一个人。
-    -->
-    <img
-      class="moyu-girl"
-      :src="girlUrl"
-      alt=""
-      width="643"
-      height="900"
-      loading="lazy"
-      decoding="async"
-    />
-
     <div class="container moyu-inner">
       <header class="moyu-head">
         <div>
@@ -437,34 +408,6 @@ watch(moyuTab, () => {
 .moyu-inner {
   position: relative;
   z-index: 1;
-}
-
-/* ── 看板娘 ─────────────────────────────────────────────── */
-.moyu-girl {
-  position: absolute;
-  /*
-   * 故意往分区外探出去一截：右、下两条硬边被 overflow: hidden 裁掉，
-   * 露出来的只有左上那一侧——那一侧图里已经烘焙了羽化，
-   * 于是她看起来是从纸的边缘探出身子，而不是一张贴上去的照片。
-   */
-  right: -56px;
-  bottom: -64px;
-  /* 排在背景光效之上、正文之下（.moyu-inner 是 z-index: 1） */
-  z-index: 0;
-  width: clamp(190px, 18vw, 280px);
-  height: auto;
-  pointer-events: none;
-  user-select: none;
-  opacity: 0.94;
-  /* 附录的暗场比原图暗半档，跟着压一点 */
-  filter: saturate(1.02) brightness(0.94);
-}
-
-@media (max-width: 1023px) {
-  /* 手机和平板上没有给她留的角落 */
-  .moyu-girl {
-    display: none;
-  }
 }
 
 /* ── 骑马钉装饰 ─────────────────────────────────────────── */

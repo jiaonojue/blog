@@ -16,10 +16,10 @@
  *   md 里的 HTML 一律不解析（html: false），链接外链自动加 rel。
  *   文件只在你的浏览器里读，不会上传。
  */
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, nextTick } from 'vue'
 import MarkdownIt from 'markdown-it'
 import DropZone from '@/components/tools/DropZone.vue'
-import { FileText, X, Copy, Check } from '@lucide/vue'
+import { FileText, X, Copy, Check, ClipboardType } from '@lucide/vue'
 
 const md = new MarkdownIt({ html: false, linkify: true, typographer: false })
 
@@ -44,6 +44,45 @@ const copied = ref(false)
 
 /** 渲染结果用 shallowRef：一整块 HTML 字符串不需要深层响应式 */
 const html = shallowRef('')
+
+/** 粘贴模式：不用文件，直接把 Markdown 文本贴进来读 */
+const pasteOpen = ref(false)
+const pasteText = ref('')
+const pasteEl = ref<HTMLTextAreaElement | null>(null)
+
+function openPaste() {
+  pasteOpen.value = true
+  error.value = ''
+  // 下一帧把焦点放进文本框，直接 Ctrl + V 就能贴
+  void nextTick(() => pasteEl.value?.focus())
+}
+
+function renderPaste() {
+  const text = pasteText.value
+  if (!text.trim()) {
+    error.value = '先贴点内容进来。'
+    return
+  }
+  error.value = ''
+  fileName.value = '粘贴的内容'
+  source.value = text
+  html.value = md.render(text)
+}
+
+/** 从剪贴板直接贴进文本框（Ctrl + V 天然支持，这里给按钮一个兜底） */
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText()
+    if (!text) {
+      error.value = '剪贴板是空的。先复制一段 Markdown 再来。'
+      return
+    }
+    pasteText.value = text
+    renderPaste()
+  } catch {
+    error.value = '浏览器不让直接读剪贴板，在下面的框里 Ctrl + V 就行。'
+  }
+}
 
 async function open(files: File[]) {
   const file = files[0]
@@ -70,6 +109,7 @@ function close() {
   source.value = ''
   html.value = ''
   error.value = ''
+  // 粘贴框留着不清：多半是要改一版再渲染
 }
 
 /** 统计：中文字数按字算，英文按词算 */
@@ -100,7 +140,7 @@ async function copySource() {
 <template>
   <section class="md-tool">
     <DropZone
-      v-if="!fileName"
+      v-if="!fileName && !pasteOpen"
       accept=".md,.markdown,.txt"
       label="拖一个 Markdown 文件进来"
       hint="支持 .md / .markdown / .txt，2MB 以内。文件只在浏览器里读，不会上传。"
@@ -108,6 +148,42 @@ async function copySource() {
     >
       <template #icon><FileText :size="20" :stroke-width="1.7" /></template>
     </DropZone>
+
+    <!-- 没打开任何东西的时候，给第二条路：贴文本 -->
+    <div v-if="!fileName && !pasteOpen" class="paste-entry">
+      <button type="button" class="md-btn" @click="openPaste">
+        <ClipboardType :size="13" :stroke-width="2" aria-hidden="true" />
+        或者直接粘贴 Markdown 文本
+      </button>
+    </div>
+
+    <!-- 粘贴模式：文本框 + 渲染按钮。live 渲染会卡大稿子，点按钮才渲染 -->
+    <div v-if="pasteOpen && !fileName" class="paste-box">
+      <textarea
+        ref="pasteEl"
+        v-model="pasteText"
+        class="paste-input"
+        rows="10"
+        placeholder="把 Markdown 粘到这里（Ctrl + V），标题、列表、代码块都会按站内文章的排版渲染。"
+        spellcheck="false"
+      />
+      <div class="paste-actions">
+        <button type="button" class="md-btn" @click="pasteFromClipboard">
+          <ClipboardType :size="13" :stroke-width="2" aria-hidden="true" />
+          读剪贴板
+        </button>
+        <button
+          type="button"
+          class="md-btn primary"
+          :disabled="!pasteText.trim()"
+          @click="renderPaste"
+        >
+          <FileText :size="13" :stroke-width="2" aria-hidden="true" />
+          渲染
+        </button>
+        <button type="button" class="md-btn" @click="pasteOpen = false">收起</button>
+      </div>
+    </div>
 
     <p v-if="error" class="md-error">{{ error }}</p>
 
@@ -152,6 +228,64 @@ async function copySource() {
   background: var(--accent-soft);
   color: var(--accent);
   font-size: 13px;
+}
+
+/* ── 粘贴模式 ───────────────────────────────────────────── */
+.paste-entry {
+  display: flex;
+  justify-content: center;
+  margin-top: -6px;
+}
+
+.paste-entry .md-btn {
+  margin: 0;
+}
+
+.paste-box {
+  display: grid;
+  gap: 10px;
+}
+
+.paste-input {
+  width: 100%;
+  min-height: 220px;
+  padding: 14px 16px;
+  border-radius: var(--r-input);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  resize: vertical;
+}
+
+.paste-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.paste-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.paste-actions .md-btn {
+  margin: 0;
+}
+
+.md-btn.primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.md-btn.primary:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.md-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 /* ── 顶部信息条 ─────────────────────────────────────────── */

@@ -28,6 +28,73 @@ const fileName = ref('')
 const busy = ref(false)
 const error = ref('')
 const container = shallowRef<HTMLElement | null>(null)
+/** 这次打开的是哪种格式：docx 有排版，doc 只有文字 */
+const mode = ref<'docx' | 'doc'>('docx')
+
+/**
+ * 老 .doc 的文字提取。
+ *
+ * 【为什么只能提文字】
+ *   .doc 是 1997 年的二进制格式（OLE 复合文档 + 分片表），
+ *   在浏览器里没有现成的解析库能还原排版。
+ *   但它的正文文字以 UTF-16 连续存在文件里，把"像文字的字节段"
+ *   扫出来就能得到全文——排版（字体、表格、图片）会丢，
+ *   文字本身是完整的。工具里会把这件事说清楚。
+ *
+ * 【怎么算"像文字"】
+ *   逐个双字节读成 UTF-16 码元，只收这些区间：
+ *   ASCII 可打印、CJK 汉字、中日韩标点、全角符号、换行制表。
+ *   连续 8 个以上算一段文字，两段之间的二进制垃圾全部跳过。
+ */
+async function extractDocText(file: File): Promise<string[]> {
+  const buf = await file.arrayBuffer()
+  const units = new Uint16Array(buf)
+
+  const valid = (c: number): boolean =>
+    c === 0x09 ||
+    c === 0x0a ||
+    c === 0x0d ||
+    (c >= 0x20 && c <= 0x7e) ||
+    (c >= 0x2010 && c <= 0x2027) ||
+    (c >= 0x3000 && c <= 0x303f) ||
+    (c >= 0x3040 && c <= 0x30ff) ||
+    (c >= 0x4e00 && c <= 0x9fff) ||
+    (c >= 0xff00 && c <= 0xffef)
+
+  // 段落按"在文件里的位置"排序，读起来才是正文顺序
+  const pieces = new Map<number, string>()
+  let run = ''
+  let runAt = 0
+  for (let u = 0; u < units.length; u++) {
+    const c = units[u]!
+    if (valid(c)) {
+      if (!run) runAt = u
+      run += String.fromCharCode(c)
+    } else if (run) {
+      if (run.length >= 8) pieces.set(runAt, run)
+      run = ''
+    }
+  }
+  if (run.length >= 8) pieces.set(runAt, run)
+
+  const all = [...pieces.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, s]) => s)
+    .join('')
+  // \x07 是 .doc 的单元格/段落分隔符；\x00-\x1f 是解析出来的控制字符——
+  // 在这里控制字符就是要被找出来清掉的，不是写错了
+  const paras = all
+    // eslint-disable-next-line no-control-regex
+    .split(/\r\n|\r|\n|\x07/)
+    // eslint-disable-next-line no-control-regex
+    .map((s) => s.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').trim())
+    .filter((s) => s.length > 0)
+
+  if (all.replace(/\s/g, '').length < 30) {
+    throw new Error('提取不到文字。这个文件可能是扫描件（图片）或加密文档。')
+  }
+  return paras
+}
 
 /** 打印用的独立窗口：只放文档内容，不夹带工具界面 */
 function printAsPdf() {
@@ -40,17 +107,38 @@ function printAsPdf() {
     return
   }
 
-  // 把预览区的 HTML 和页面里已加载的样式一起搬过去
-  const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-    .map((n) => n.outerHTML)
-    .join('\n')
+  const escapeHtml = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  let bodyHtml: string
+  let extraCss: string
+  if (mode.value === 'doc') {
+    // .doc 只有纯文字：打印窗口里直接给一套干净的排版
+    const paras = (el.dataset.docParas ?? '')
+      .split('\u0001')
+      .filter(Boolean)
+      .map((p) => `<p>${escapeHtml(p)}</p>`)
+      .join('\n')
+    bodyHtml = `<article class="doc-plain">${paras}</article>`
+    extraCss = `
+      .doc-plain { max-width: 720px; margin: 0 auto; font-family: "Songti SC", SimSun, serif;
+        font-size: 12pt; line-height: 1.9; color: #000; }
+      .doc-plain p { margin: 0 0 0.6em; text-align: justify; }`
+  } else {
+    // 把预览区的 HTML 和页面里已加载的样式一起搬过去
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((n) => n.outerHTML)
+      .join('\n')
+    bodyHtml = el.innerHTML
+    extraCss = styles
+  }
 
   win.document.write(`<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <title>${fileName.value.replace(/\.docx?$/i, '')}</title>
-${styles}
+${extraCss}
 <style>
   /* 打印专用：去掉一切站点外壳，只留文档 */
   body { background: #fff !important; color: #000 !important; margin: 0; }
@@ -59,27 +147,14 @@ ${styles}
   @page { margin: 18mm 16mm; }
 </style>
 </head>
-<body></body>
+<body>${bodyHtml}</body>
 </html>`)
   win.document.close()
 
-  // 等样式生效再把节点搬进去
-  win.onload = () => {
-    win.document.body.innerHTML = el.innerHTML
-    setTimeout(() => {
-      win.focus()
-      win.print()
-    }, 300)
-  }
-
-  // 有些浏览器不触发 onload（因为文档是 write 出来的），兜一层
   setTimeout(() => {
-    if (!win.document.body.innerHTML.trim()) {
-      win.document.body.innerHTML = el.innerHTML
-      win.focus()
-      win.print()
-    }
-  }, 800)
+    win.focus()
+    win.print()
+  }, 300)
 }
 
 async function open(files: File[]) {
@@ -87,8 +162,8 @@ async function open(files: File[]) {
   if (!file) return
   error.value = ''
 
-  if (!/\.docx$/i.test(file.name)) {
-    error.value = '只支持 .docx。老的 .doc 格式请先用 Word 另存为 .docx。'
+  if (!/\.(docx?|docm)$/i.test(file.name)) {
+    error.value = '只支持 .docx / .doc。其它格式请先转成 Word。'
     return
   }
   if (file.size > 25 * 1024 * 1024) {
@@ -107,20 +182,30 @@ async function open(files: File[]) {
   }
 
   host.innerHTML = ''
+  host.removeAttribute('data-doc-paras')
 
   try {
-    await renderAsync(file, host, undefined, {
-      className: 'docx',
-      inWrapper: true,
-      // 断页交给 CSS，别让库自己算——它算出来的页高和纸张对不上
-      breakPages: false,
-      ignoreLastRenderedPageBreak: false,
-      // 用 base64 内嵌图片，这样打印窗口里图片也能显示
-      useBase64URL: true,
-      renderHeaders: true,
-      renderFooters: true,
-      renderFootnotes: true,
-    })
+    if (/\.docx$|\.docm$/i.test(file.name)) {
+      mode.value = 'docx'
+      await renderAsync(file, host, undefined, {
+        className: 'docx',
+        inWrapper: true,
+        // 断页交给 CSS，别让库自己算——它算出来的页高和纸张对不上
+        breakPages: false,
+        ignoreLastRenderedPageBreak: false,
+        // 用 base64 内嵌图片，这样打印窗口里图片也能显示
+        useBase64URL: true,
+        renderHeaders: true,
+        renderFooters: true,
+        renderFootnotes: true,
+      })
+    } else {
+      mode.value = 'doc'
+      const paras = await extractDocText(file)
+      // 段落先塞进 data 属性，打印时按这个重建（纯文字排版在打印窗口里给）
+      host.dataset.docParas = paras.join('\u0001')
+      host.innerHTML = paras.map((p) => `<p>${p}</p>`).join('')
+    }
   } catch (e) {
     error.value = `解析失败：${e instanceof Error ? e.message : String(e)}。文件可能是加密的或损坏的。`
     fileName.value = ''
@@ -140,9 +225,9 @@ function close() {
   <section class="docx-tool">
     <DropZone
       v-if="!fileName"
-      accept=".docx"
+      accept=".docx,.doc"
       label="拖一个 Word 文档进来"
-      hint=".docx 格式，25MB 以内。解析和打印都在本地完成，文件不会上传。"
+      hint=".docx 保留排版；.doc 只能提取文字（排版会丢）。25MB 以内，全部本地完成。"
       @files="open"
     >
       <template #icon><FileType2 :size="20" :stroke-width="1.7" /></template>
@@ -169,10 +254,12 @@ function close() {
       <li>
         拖入
         <code>.docx</code>
-        ，浏览器本地解析成和 Word 里接近的排版。
+        ，浏览器本地解析成和 Word 里接近的排版；老
+        <code>.doc</code>
+        会提取纯文字（字体、表格、图片会丢——要保排版请先在 Word 里另存为 .docx）。
       </li>
       <li>点「打印 / 存为 PDF」，在弹出的打印窗口里把目标改成「另存为 PDF」。</li>
-      <li>页边距建议选「默认」，缩放选「默认」——文档本身的分页会被保留。</li>
+      <li>页边距建议选「默认」，缩放选「默认」——docx 文档本身的分页会被保留。</li>
     </ol>
 
     <div v-if="busy" class="docx-busy">
@@ -181,11 +268,17 @@ function close() {
     </div>
 
     <!--
-      预览容器：docx-preview 会把内容塞进这个 div。
+      预览容器：docx-preview 会把内容塞进这个 div；
+      .doc 则是提取出来的纯文字段落。
       用 v-show 而不是 v-if，因为 v-if 会把节点从 DOM 里摘掉，
       库拿到的引用就失效了。
     -->
-    <div ref="container" v-show="fileName" class="docx-preview" />
+    <div
+      ref="container"
+      v-show="fileName"
+      class="docx-preview"
+      :class="{ 'is-doc-text': mode === 'doc' }"
+    />
   </section>
 </template>
 
@@ -324,6 +417,24 @@ function close() {
 .docx-preview :deep(.docx-wrapper > section.docx) {
   box-shadow: var(--shadow);
   margin-bottom: 20px;
+}
+
+/* .doc 提取出来的纯文字：给一个像稿纸的排版 */
+.docx-preview.is-doc-text {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 36px;
+  border-radius: var(--r-card);
+  background: var(--surface);
+  font-family: var(--font-quote);
+  font-size: 14px;
+  line-height: 2;
+  color: var(--ink);
+}
+
+.docx-preview.is-doc-text p {
+  margin: 0 0 0.7em;
+  text-align: justify;
 }
 
 [data-motion='off'] .spin {

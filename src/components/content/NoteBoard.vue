@@ -26,12 +26,14 @@ import {
   MAX_NOTES,
   ago,
   copyText,
+  currentServer,
   deleteNote,
   fetchNotes,
   postImage,
   postNote,
   readKey,
   saveKey,
+  saveServer,
   shareUrl,
   shrinkImage,
   topicOf,
@@ -79,6 +81,23 @@ const canSend = computed(
 let refreshTimer = 0
 let copiedTimer = 0
 
+/* ── 中转服务器 ─────────────────────────────────────────── */
+
+/*
+ * 跨设备互传走的是公网中转（ntfy 协议）。默认的 ntfy.sh
+ * 在个别网络环境下可能连不通——换一台能连通的实例即可，
+ * 密钥、消息全部照旧。地址只存在本机。
+ */
+const serverInput = ref('')
+const serverOpen = ref(false)
+
+function applyServer() {
+  saveServer(serverInput.value)
+  serverInput.value = currentServer()
+  serverOpen.value = false
+  error.value = ''
+}
+
 /* ── 解锁 ───────────────────────────────────────────────── */
 
 async function unlock(key: string) {
@@ -96,7 +115,11 @@ async function unlock(key: string) {
     unlocked.value = true
     startRefresh()
   } catch (err) {
-    error.value = err instanceof Error ? `连不上：${err.message}` : '连不上'
+    const msg = err instanceof Error ? err.message : ''
+    error.value =
+      msg === 'Failed to fetch'
+        ? '连不上中转服务器。检查网络，或在下方「中转」里换一台 ntfy 实例。'
+        : `连不上：${msg}`
   } finally {
     loading.value = false
   }
@@ -237,6 +260,7 @@ async function copy(note: Note) {
 /* ── 生命周期 ───────────────────────────────────────────── */
 
 onMounted(() => {
+  serverInput.value = currentServer()
   const saved = readKey()
   if (saved) {
     keyInput.value = saved
@@ -298,10 +322,35 @@ watch(unlocked, (on) => {
             {{ loading ? '开门中' : '开' }}
           </button>
         </form>
+
+        <p v-if="error" class="notes-error gate-error">{{ error }}</p>
+
         <p class="gate-note">
+          消息走公网中转（ntfy），不走局域网——手机用流量、电脑用宽带也互传得到。
           密钥只存在这台设备的浏览器里，不上传、不进仓库。 手机第一次用，把这个地址存成书签：
           <code>{{ shareUrl() }}</code>
         </p>
+
+        <!-- 中转服务器：默认 ntfy.sh，连不通时换一台 -->
+        <button type="button" class="gate-relay-toggle" @click="serverOpen = !serverOpen">
+          {{ serverOpen ? '收起中转设置' : '连不通？换一台中转' }}
+        </button>
+        <div v-if="serverOpen" class="gate-relay">
+          <input
+            v-model="serverInput"
+            class="notes-key-input"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="https://ntfy.sh"
+            aria-label="ntfy 中转服务器地址"
+          />
+          <button type="button" class="gate-btn" @click="applyServer">记住了</button>
+          <p class="gate-relay-hint">
+            当前：{{ currentServer() }}。必须是 https:// 开头的 ntfy 兼容实例；
+            换了服务器，两台设备要换成同一个，消息才碰得上。
+          </p>
+        </div>
       </div>
 
       <img
@@ -613,6 +662,41 @@ watch(unlocked, (on) => {
   background: color-mix(in srgb, var(--ink-soft) 12%, transparent);
   font-family: var(--font-mono);
   font-size: 10px;
+  word-break: break-all;
+}
+
+.gate-error {
+  border-radius: var(--r-input);
+}
+
+/* ── 中转服务器设置 ─────────────────────────────────────── */
+.gate-relay-toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  text-decoration: underline dashed;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color var(--t-fast) var(--ease-out);
+}
+
+.gate-relay-toggle:hover {
+  color: var(--accent);
+}
+
+.gate-relay {
+  display: grid;
+  gap: 6px;
+  width: min(320px, 100%);
+}
+
+.gate-relay-hint {
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  opacity: 0.8;
   word-break: break-all;
 }
 
