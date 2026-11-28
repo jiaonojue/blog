@@ -43,7 +43,7 @@ function escapeXml(s) {
 
 function buildSitemap() {
   // 不含 credits / secret / 404
-  const staticPaths = ['/', '/posts', '/favorites', '/gallery', '/about']
+  const staticPaths = ['/', '/posts', '/favorites', '/gallery', '/about', '/changelog']
   const postPaths = index.posts.map((p) => p.path)
   const all = [...staticPaths, ...postPaths]
 

@@ -152,6 +152,8 @@ interface RawMessage {
   event?: string
   message?: string
   attachment?: { url?: string; name?: string }
+  /** 删除事件里指向"被删的那条"，见 fetchNotes 的墓碑说明 */
+  sequence_id?: string
 }
 
 function toNote(raw: RawMessage): Note | null {
@@ -181,6 +183,13 @@ function toNote(raw: RawMessage): Note | null {
  *   ntfy 默认只返回"从现在开始"的新消息。
  *   我们要的是"板子上现有的"，所以明确要全部历史，
  *   再自己截到 FETCH_LIMIT 条。
+ *
+ * 【为什么要先收集墓碑】
+ *   ntfy 的删除不真删。DELETE 之后原消息还在历史里，
+ *   只多出一条 event: 'message_delete' 的事件，
+ *   它的 sequence_id 指向被删的那条。
+ *   不先把这些 id 收集起来剔除，撕掉的便条下次刷新又会回来——
+ *   用户看到的"删一个长一个"就是这么来的。
  */
 export async function fetchNotes(topic: string): Promise<Note[]> {
   const res = await fetch(`${currentServer()}/${topic}/json?poll=1&since=all`, {
@@ -189,16 +198,35 @@ export async function fetchNotes(topic: string): Promise<Note[]> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
   const body = await res.text()
-  const notes: Note[] = []
+  const rows: RawMessage[] = []
   for (const line of body.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed) continue
     try {
-      const note = toNote(JSON.parse(trimmed) as RawMessage)
-      if (note) notes.push(note)
+      rows.push(JSON.parse(trimmed) as RawMessage)
     } catch {
       /* 单行坏了不影响其它行 */
     }
+  }
+
+  // 第一遍：记下所有墓碑指向的 id
+  const dead = new Set<string>()
+  for (const row of rows) {
+    if (row.event === 'message_delete' && row.sequence_id) dead.add(row.sequence_id)
+  }
+
+  // 第二遍：墓碑本身、以及被墓碑点名的消息都不算便条
+  const notes: Note[] = []
+  for (const row of rows) {
+    /*
+     * 注意：ntfy 给普通消息也带 event: 'message'。
+     * 所以这里不能写成"有 event 就跳过"，只能跳过
+     * message_delete / open / keepalive 这些非便条事件。
+     */
+    if (row.event && row.event !== 'message') continue
+    if (row.id && dead.has(row.id)) continue
+    const note = toNote(row)
+    if (note) notes.push(note)
   }
 
   // 新的在前
@@ -223,8 +251,14 @@ export async function postNote(topic: string, text: string): Promise<string> {
  *
  * 【为什么图片要单独一个函数】
  *   ntfy 的附件是"把文件放进请求体，文件名放在头里"，
- *   不是 multipart。所以 Content-Type 要设成文件本身的类型，
- *   消息文字则放在 X-Message 头里。
+ *   不是 multipart。所以 Content-Type 要设成文件本身的类型。
+ *
+ * 【为什么文件名和说明走 query，不走请求头】
+ *   ntfy 认 Filename / X-Message 两个头，但浏览器的请求头只能是
+ *   ISO-8859-1（Latin-1）。中文文件名或中文说明放进去会直接抛
+ *   "String contains non ISO-8859-1 code point"——发图失败。
+ *   改成 query 参数（URLSearchParams 自动百分号编码）就没有这个限制，
+ *   ntfy 一样认，中文文件名和中文说明都能过。
  *
  * 【大小上限】
  *   ntfy.sh 免费实例允许 15MB。手机上随手拍的照片常常超过，
@@ -236,14 +270,15 @@ export async function postImage(
   filename: string,
   caption = '',
 ): Promise<string> {
-  const res = await fetch(`${currentServer()}/${topic}`, {
+  const qs = new URLSearchParams()
+  qs.set('filename', filename)
+  if (caption) qs.set('message', caption)
+
+  const res = await fetch(`${currentServer()}/${topic}?${qs.toString()}`, {
     method: 'PUT',
     body: file,
     headers: {
-      // 只用 ASCII 会丢中文文件名，ntfy 接受百分号编码
-      Filename: encodeURIComponent(filename),
       'Content-Type': file.type || 'application/octet-stream',
-      'X-Message': caption || '收到一张图',
     },
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -252,9 +287,21 @@ export async function postImage(
 }
 
 /** 删掉一条 */
-export async function deleteNote(topic: string, id: string): Promise<void> {
-  // 删不掉不算致命：界面上已经把它剔掉了，下次刷新会再试
-  await fetch(`${currentServer()}/${topic}/${id}`, { method: 'DELETE' }).catch(() => undefined)
+export async function deleteNote(topic: string, id: string): Promise<boolean> {
+  /*
+   * ntfy 的 DELETE 是留墓碑，不是真删：原消息还在历史里，
+   * 只多出一条 message_delete 事件（实测立刻出现）。
+   * 所以"删干净"靠的是 fetchNotes 过滤墓碑 + 调用方本地剔除，
+   * 不是靠这个请求成功。
+   *
+   * 返回值只是"请求有没有被接受"：true 表示服务端认了这次删除。
+   */
+  try {
+    const res = await fetch(`${currentServer()}/${topic}/${id}`, { method: 'DELETE' })
+    return res.ok
+  } catch {
+    return false
+  }
 }
 
 /**

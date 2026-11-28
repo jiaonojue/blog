@@ -327,8 +327,20 @@ watch(moyuTab, () => {
   background: var(--bg);
   border-top: 1px solid var(--line);
   padding-block: 56px 56px;
-  /* 光效和网格都要被裁在节内，不然会糊到页脚上去 */
+  /*
+   * 光效和网格都要被裁在节内，不然会糊到页脚上去。
+   *
+   * 【为什么是 clip 而不是 hidden】
+   *   两团光都是负偏移的（右边那团 right: -6%），所以这一节的内容
+   *   比自身宽出几十像素。overflow: hidden 会把这一节变成"可滚动容器"——
+   *   里面的东西一被 scrollIntoView 或 focus 点名（比如摸鱼分区里
+   *   别的页上的输入框），整节就被横向滚走几十像素，
+   *   标题和左边一截内容直接裁出画面。
+   *   overflow: clip 一样裁切，但不建立滚动容器，滚不动，也就没这回事。
+   *   上面那行 hidden 是给不认 clip 的老浏览器兜底的。
+   */
   overflow: hidden;
+  overflow: clip;
   isolation: isolate;
 }
 

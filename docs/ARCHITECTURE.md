@@ -18,12 +18,13 @@
 flowchart TD
     subgraph 内容["内容层（你写的）"]
         MD["content/**/*.md<br/>文章 / 收藏 / 相册 / 工具"]
+        LOG["CHANGELOG.md<br/>更新日志"]
         ART["public/art/**<br/>插画、封面"]
         CFG["src/data/site.config.ts<br/>站名、导航、开关"]
     end
 
     subgraph 构建期["构建期（npm run build）"]
-        IDX["build-content-index.mjs<br/>① 扫描 md，渲染 Markdown → HTML<br/>② 生成 content.json + bodies.json"]
+        IDX["build-content-index.mjs<br/>① 扫描 md，渲染 Markdown → HTML<br/>② 渲染 CHANGELOG.md<br/>③ 生成 content.json + bodies.json"]
         SSG["vite-ssg<br/>③ 每个路由渲染成真实 HTML"]
         POST["postbuild.mjs<br/>④ sitemap / robots<br/>⑤ 404.html<br/>⑥ Pagefind 索引"]
     end
@@ -39,6 +40,7 @@ flowchart TD
     Pages["GitHub Pages"]
 
     MD --> IDX
+    LOG --> IDX
     IDX --> SSG
     CFG --> SSG
     SSG --> POST
@@ -71,6 +73,12 @@ flowchart TD
 首屏 JS 会带上全部文章内容，几十篇文章就是几 MB。拆开之后，正文只有打开文章详情页才下载。
 
 这一步在 `npm run dev` 和 `npm run build` 开始时都会自动跑。
+
+**更新日志不走 `content/` 目录**，而是直接读仓库根目录的 `CHANGELOG.md`。
+`loadChangelog()` 用同一套 Markdown + Shiki 管线把它渲染成 HTML，
+塞进 `content.json` 的 `changelog` 字段（`{ html, updated }`）。
+`/changelog` 页在 `setup` 里同步取用，所以预渲染出来的 HTML 已经带完整正文，
+不需要像文章页那样在 `onServerPrefetch` 里单独取。
 
 ### 阶段二：预渲染（`vite-ssg`）
 
@@ -138,7 +146,11 @@ flowchart TD
 ```
 
 数据来源只有一个：`content.json`（已打包进 JS）。
-文章正文通过动态 `import()` 单独加载。
+文章正文通过动态 `import()` 单独加载；更新日志正文则同步放在 `content.json`
+的 `changelog.html` 里（因为它只有一份，不值得单独拆一个 JSON）。
+
+`/changelog` 不在主导航里，入口收在设置抽屉「关于」组的折叠块中，
+默认合上，不占抽屉的地方。`postbuild.mjs` 会把它加进 sitemap。
 
 **状态存在哪**：
 

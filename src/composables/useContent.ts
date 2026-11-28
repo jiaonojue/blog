@@ -16,6 +16,7 @@ export const gallery = data.gallery
 export const tools = data.tools
 export const now = data.now
 export const about = data.about
+export const changelog = data.changelog
 
 /** 取最新 n 篇文章 */
 export function latestPosts(n: number): Post[] {

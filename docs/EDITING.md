@@ -27,6 +27,7 @@
 14. [摸鱼分区与在线小说](#14-摸鱼分区与在线小说)
 15. [便条板（手机发、电脑抄）](#15-便条板手机发电脑抄)
 16. [出错了怎么办](#16-出错了怎么办)
+17. [更新日志页](#17-更新日志页)
 
 ---
 
@@ -931,6 +932,46 @@ git push
 | `[内容错误]`              | 文章 frontmatter 写错了 | 提示里有具体文件和建议值                        |
 
 **万能解**：跑 `npm run format`，能自动修掉一半的问题。
+
+---
+
+## 17. 更新日志页
+
+站点有一页独立的更新日志：`/changelog`（设置抽屉里「关于」那一组有入口，默认折叠）。
+
+**打开**：仓库根目录的 `CHANGELOG.md`
+
+它用 Markdown 写，格式大致按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)：
+最新版本排在最上面，`## [版本号] — 日期` 下面分「新增 / 变更 / 修复」几类。
+
+**每次改动都要记一笔**，哪怕只是改了一行文案。写一个新版本：
+
+1. 在文件开头 `---` 分隔线下面、`## [上一个版本]` 上面插入一段：
+
+   ```markdown
+   ## [0.3.3] — 2026-11-29
+
+   一句话说清楚这轮改了什么。
+
+   ### 修复
+
+   - 修了什么（涉及哪个文件）
+
+   ### 新增
+
+   - 加了什么
+   ```
+
+2. 改 `package.json` 的 `version` 和 `src/components/layout/SettingsPanel.vue` 里的 `const version`，
+   让设置抽屉显示的版本号跟上
+
+**它怎么上站的**：`scripts/build-content-index.mjs` 里的 `loadChangelog()` 会把这个文件渲染进
+`src/generated/content.json`，`src/pages/Changelog.vue` 再读出来。和 Now / 关于页是同一条管线，
+代码高亮、标题锚点都有。改完 `CHANGELOG.md` 跑一次 `npm run dev` 或 `npm run build` 就能看到，
+不需要手动碰 `src/generated/`。
+
+> 这一页不在主导航里（用户要求设置里默认隐藏），所以要在设置抽屉里点进去。
+> 新增改动时记得同步 `CHANGELOG.md`——这是站点的编年史，别让它停在旧版本。
 
 ---
 

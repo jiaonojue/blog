@@ -43,6 +43,10 @@ import {
   type AnimeEntry,
   type HintMap,
 } from '@/composables/useAnimeList'
+import { MOYU_TABS, moyuTab } from '@/composables/useMoyuZone'
+
+/** 猜番在摸鱼分区里是第几页。用 key 查，别把下标写死 */
+const QUIZ_TAB_INDEX = MOYU_TABS.findIndex((t) => t.key === 'quiz')
 
 type Mode = 'easy' | 'hard'
 
@@ -320,7 +324,31 @@ function next() {
     return
   }
   if (list.value.length) buildQuestion(list.value)
-  void nextTick(() => inputEl.value?.focus())
+  focusInput()
+}
+
+/**
+ * 管好困难模式输入框的焦点：在猜番页上才聚焦，离开就交还焦点。
+ *
+ * 【为什么要先确认它在看得见的地方】
+ *   摸鱼分区的五页是同时挂载的（横向轨道平移，不是 v-if 卸载），
+ *   所以在"读本"页上困难模式的输入框也在 DOM 里，只是被平移到屏幕外。
+ *   这时 focus() 会让浏览器把它滚进视野——它自己的 overflow 祖先
+ *   .moyu 会被横向滚动几十像素，整个附录的标题和左边一截被裁掉；
+ *   而且焦点停在一个看不见的输入框里，插入光标就在那里一直闪，
+ *   看起来像"页面上有根线在闪，像在编辑什么"。
+ *
+ * 【为什么要主动 blur】
+ *   只管"进入时聚焦"不够：用户在困难模式下按下一页/切到别的栏目时，
+ *   焦点还留在这个已经被平移出屏幕的输入框里，那根光标照样在闪。
+ *   所以只要"不在猜番页"或"不在困难模式"，就把焦点交还给页面。
+ */
+function focusInput() {
+  const shouldFocus = mode.value === 'hard' && moyuTab.value === QUIZ_TAB_INDEX
+  void nextTick(() => {
+    if (shouldFocus) inputEl.value?.focus()
+    else if (document.activeElement === inputEl.value) inputEl.value?.blur()
+  })
 }
 
 /** 切难度：换一道新题，连对重新算，这一轮的账也重开 */
@@ -374,10 +402,9 @@ onUnmounted(() => {
   window.clearTimeout(freshTimer)
 })
 
-/** 切到困难模式时把焦点放进输入框 */
-watch(mode, (m) => {
-  if (m === 'hard') void nextTick(() => inputEl.value?.focus())
-})
+/** 切到困难模式时把焦点放进输入框；翻到猜番这一页时也一样 */
+watch(mode, () => focusInput())
+watch(moyuTab, () => focusInput())
 
 /** 选项答完后要不要标出正确答案 */
 function optionState(opt: AnimeEntry): 'idle' | 'right' | 'wrong' | 'dim' {

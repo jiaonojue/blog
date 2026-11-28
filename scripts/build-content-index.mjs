@@ -326,6 +326,24 @@ async function loadAbout() {
 }
 
 /**
+ * 读仓库根目录的 CHANGELOG.md，渲染成 /changelog 页。
+ *
+ * 【为什么走构建期而不是运行时】
+ *   Markdown 渲染器（Shiki 高亮、标题 id、外链 target）已经在这里配好了，
+ *   和 now / about 用同一套，产出的静态 HTML 也能被预渲染和搜索索引收录。
+ *   运行时再引一遍 markdown-it 只会让那一页多下载一份高亮库。
+ */
+async function loadChangelog() {
+  const file = join(ROOT, 'CHANGELOG.md')
+  if (!existsSync(file)) return { html: '', updated: '' }
+  const { data, content } = matter(readFileSync(file, 'utf8'))
+  return {
+    html: await md.renderAsync(content),
+    updated: data.updated ? toDateString(data.updated) : '',
+  }
+}
+
+/**
  * 解析 public/art/CREDITS.md 里的素材登记表。
  *
  * 【格式要求】用 Markdown 表格，表头必须包含这些列名（顺序随意）：
@@ -395,6 +413,7 @@ const index = {
   tools: loadTools(),
   now: await loadNow(),
   about: await loadAbout(),
+  changelog: await loadChangelog(),
 }
 
 mkdirSync(GEN, { recursive: true })

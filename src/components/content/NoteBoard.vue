@@ -202,15 +202,28 @@ async function send() {
   }
 }
 
-/** 删一条 */
+/**
+ * 删一条。
+ *
+ * 【为什么删完不当场 refresh】
+ *   ntfy 的删除是"留墓碑"：DELETE 返回 200 之后，历史里那条消息还在，
+ *   另有一条 message_delete 记着它是被删的。墓碑实测是立刻出现的，
+ *   但删完立刻重拉依然有竞态：万一这一刻的拉取走过墓碑之前的历史，
+ *   被删的那条就会当场回来，看起来就是"删一个长一个"。
+ *   所以这里只在本地把它剔掉；20 秒后的定时刷新由 fetchNotes
+ *   按墓碑统一过滤，它不会再把这条放回来。
+ */
 async function remove(note: Note) {
   if (!topic.value) return
   removingId.value = note.id
   try {
-    await deleteNote(topic.value, note.id)
-    // 先从屏幕上拿掉，动画才有东西可演
+    const ok = await deleteNote(topic.value, note.id)
+    if (!ok) {
+      error.value = '中转站没收下这次删除，稍后自己再刷新看看'
+      return
+    }
+    // 从屏幕上拿掉，动画才有东西可演
     notes.value = notes.value.filter((n) => n.id !== note.id)
-    await refresh()
   } catch (err) {
     error.value = err instanceof Error ? err.message : '删不掉'
   } finally {

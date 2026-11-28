@@ -7,13 +7,12 @@
  *   1. 在 src/composables/useSettings.ts 的 Settings 接口加字段 + DEFAULTS 加默认值
  *   2. 在下面模板里复制一组 .switch-row 改成你要的
  */
-import { computed } from 'vue'
 import { navItems } from '@/data/site.config'
 import { site } from '@/data/site.config'
-import { settings, resetSettings, DEFAULTS, type ThemeName } from '@/composables/useSettings'
+import { settings, resetSettings, type ThemeName } from '@/composables/useSettings'
 import { X, RotateCcw } from '@lucide/vue'
 
-const props = defineProps<{ open: boolean }>()
+defineProps<{ open: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 
 const themes: { key: ThemeName; label: string }[] = [
@@ -34,8 +33,7 @@ function toggleNav(key: string) {
     : [...hidden, key]
 }
 
-const version = '0.3.1'
-const showChangelog = computed(() => props.open)
+const version = '0.3.2'
 </script>
 
 <template>
@@ -168,8 +166,11 @@ const showChangelog = computed(() => props.open)
             <details class="changelog">
               <summary>更新日志</summary>
               <p class="changelog-body">
-                每次改动都会记录在仓库根目录的 CHANGELOG.md
-                里。展开这里会显示最近几条（构建时注入）。
+                每次改动都记在
+                <RouterLink to="/changelog" @click="emit('update:open', false)">
+                  更新日志这一页
+                </RouterLink>
+                。这里是默认收起的附页索引，不占设置抽屉的地方。
               </p>
             </details>
 
@@ -177,7 +178,6 @@ const showChangelog = computed(() => props.open)
               <RotateCcw :size="14" :stroke-width="1.75" aria-hidden="true" />
               恢复默认设置
             </button>
-            <p class="sr-only">{{ showChangelog ? '' : '' }}{{ DEFAULTS.theme }}</p>
           </section>
         </div>
       </aside>
