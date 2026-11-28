@@ -23,8 +23,15 @@
  * 【为什么玩法零版权风险】
  *   题面只有：一张被处理过的封面、一句自己写的话、番名和数字。
  *   没有任何一帧原画、台词、角色立绘。
+ *
+ * 【为什么有"这一轮"这个概念】
+ *   原来是一题接一题无限出，答对多少没有终点，也就没有成就感。
+ *   现在一轮固定 N 题（默认 20），答对的百分比到 5/10/20/40/60/80/100
+ *   这七道坎时盖一枚章夸一句——像同人志里集满一页的小印章。
+ *   百分比而不是"连对"：连对断一次就前功尽弃，太伤；
+ *   这一轮里累计答对几题，才是"你到底认不认得这些番"。
  */
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { ArrowRight, Eye, RotateCcw } from '@lucide/vue'
 import {
   DIMENSIONS,
@@ -69,6 +76,132 @@ const streak = ref(0)
 /** 上一题的番名，下一题不重复出 */
 let lastAnswer = ''
 
+/* ── 一轮：题量、进度、里程碑 ───────────────────────────── */
+
+/** 可选的一轮题量。20 是默认：坐得住的长度，又不至于没问几道就结束 */
+const ROUND_CHOICES = [10, 20, 30, 50] as const
+type RoundSize = (typeof ROUND_CHOICES)[number]
+
+/** 这一轮出多少题 */
+const roundSize = ref<RoundSize>(20)
+/** 这一轮已经出了几题（含当前这题） */
+const asked = ref(0)
+/** 这一轮答对了几题 */
+const rightCount = ref(0)
+/** 这一轮结束了吗 */
+const roundOver = ref(false)
+
+/**
+ * 七个里程碑。
+ *
+ * 【为什么是这几个数】
+ *   5 / 10 / 20 / 40 / 60 / 80 / 100 —— 前半段密，后半段疏。
+ *   一开始答对两道就能拿到第一枚章，先给点甜头；
+ *   到 80% 之后每多对一题都很接近满分，100% 才值得单独庆祝。
+ *
+ * 【为什么按百分比算，不按"答对几题"】
+ *   题量能选 10 到 50，固定题数在 10 题一轮时根本到不了。
+ *   百分比让 10 题和 50 题的一轮都有同样的七道坎。
+ */
+const MILESTONES = [5, 10, 20, 40, 60, 80, 100] as const
+
+/** 一句话夸夸，每个里程碑一句，口气从"还行"走到"离谱" */
+const PRAISE: Record<number, string> = {
+  5: '开了个头。',
+  10: '十中有一，眼睛开始认人了。',
+  20: '五分之一。片单不是白刷的。',
+  40: '快一半了。你是真的在看，不是挂着。',
+  60: '六成。这个准确率可以拿去考人了。',
+  80: '八成。剩下两成大概是你没看过的冷门。',
+  100: '全中。这一轮没有一部逃过你的眼睛。',
+}
+
+/**
+ * 已解锁的里程碑（百分比数字）。
+ *
+ * 【为什么不存"最高到过哪个"】
+ *   答错的题不会把已经拿到的章收回——百分比是按"已答对的题数 / 总题数"算的，
+ *   分母是这一轮的总题数，所以它只会涨，不会掉。
+ *   拿过的章就一直亮着，这是"夸夸"，不是"考核"。
+ */
+const reached = computed(() => {
+  if (!roundSize.value) return [] as number[]
+  const ratio = (rightCount.value / roundSize.value) * 100
+  return MILESTONES.filter((m) => ratio >= m)
+})
+
+/** 这一轮答对的百分比，取整 */
+const pct = computed(() =>
+  roundSize.value ? Math.round((rightCount.value / roundSize.value) * 100) : 0,
+)
+
+/** 刚跨过的那道坎，用来演一下"盖章"动画。0 = 没有新章 */
+const freshMilestone = ref(0)
+let freshTimer = 0
+/**
+ * 已经庆祝过的最高一道坎。
+ *
+ * 【为什么不直接拿 freshMilestone 比】
+ *   freshMilestone 三秒后归零，好让下一次动画能重新播。
+ *   如果拿它当"上次庆祝到哪"的记录，同一道坎会被反复庆祝——
+ *   20% 时演一次，三秒后随便再答对一题又演一次 20%。
+ *   所以真正的记录放在这个变量里，只增不减，一轮结束后才清。
+ */
+let bestSeen = 0
+
+/**
+ * 判定"这一题答对了"之后调一次，看看有没有跨过新的坎。
+ *
+ * 【为什么要单独一个函数】
+ *   简单模式点选项、困难模式回车——两条路径都会改 rightCount，
+ *   在每条路径后面各写一遍判定，早晚会漏一处。
+ */
+function bumpRight() {
+  rightCount.value += 1
+  const now = reached.value
+  const top = now.length ? now[now.length - 1]! : 0
+  if (top > bestSeen) {
+    bestSeen = top
+    freshMilestone.value = top
+    window.clearTimeout(freshTimer)
+    freshTimer = window.setTimeout(() => (freshMilestone.value = 0), 3200)
+  }
+}
+
+/** 开始新一轮（也用在"换难度"和"重开"上） */
+function startRound() {
+  asked.value = 0
+  rightCount.value = 0
+  roundOver.value = false
+  freshMilestone.value = 0
+  bestSeen = 0
+  window.clearTimeout(freshTimer)
+  streak.value = 0
+  lastAnswer = ''
+  next()
+}
+
+/** 一轮答满了没有 */
+const exhausted = computed(() => asked.value >= roundSize.value)
+
+/**
+ * 收尾那页的一句话。
+ *
+ * 【为什么按百分比分档，而不是按"对了几题"】
+ *   50 题里对 30 和 10 题里对 6 是一回事，说法就该一样。
+ *   口气统一是"夸"——这轮玩的是认不认得出，不是考试。
+ */
+const overVerdict = computed(() => {
+  const p = pct.value
+  if (p >= 100) return '满分。这一轮，一部都没逃过去。'
+  if (p >= 80) return '八成以上。这已经不是"看过"，是"记得"。'
+  if (p >= 60) return '六成。稳稳的，再刷两轮就上八成了。'
+  if (p >= 40) return '四成。认得的比不认得多，及格线以上。'
+  if (p >= 20) return '两成。片单还得再刷一刷，但已经认得几张脸了。'
+  if (p >= 5) return '开了个头。下次换简单档试试，先把人认全。'
+  return '这一轮全没中——要不先把封面看熟，再来？'
+})
+
 const answered = computed(() =>
   mode.value === 'easy' ? picked.value !== null : solved.value || gaveUp.value,
 )
@@ -95,6 +228,7 @@ function buildQuestion(pool: AnimeEntry[]) {
   const target = pickRandom(candidates.length ? candidates : pool)
   if (!target) return
 
+  asked.value += 1
   lastAnswer = target.name
   answer.value = target
   picked.value = null
@@ -133,8 +267,12 @@ function buildQuestion(pool: AnimeEntry[]) {
 function pickOption(name: string) {
   if (answered.value) return
   picked.value = name
-  if (name === answer.value?.name) streak.value += 1
-  else streak.value = 0
+  if (name === answer.value?.name) {
+    streak.value += 1
+    bumpRight()
+  } else {
+    streak.value = 0
+  }
 }
 
 /** 困难模式：对答案 */
@@ -146,6 +284,7 @@ function check() {
   if (isTitleMatch(input, answer.value.name, aliases.value)) {
     solved.value = true
     streak.value += 1
+    bumpRight()
     return
   }
 
@@ -160,24 +299,35 @@ function check() {
   }
 }
 
-/** 困难模式：直接看答案，连对清零 */
+/** 困难模式：直接看答案，连对清零，这一题不算答对 */
 function reveal() {
   if (!answer.value || answered.value) return
   gaveUp.value = true
   streak.value = 0
 }
 
+/**
+ * 下一题。这一轮出满了就收尾，不再出题。
+ *
+ * 【为什么结束放在这里，不放在答题时】
+ *   答完最后一题还要让人看见答案和解析，不能一出完题就切走。
+ *   所以"出满"这件事在点「下一题」的那一刻才生效。
+ */
 function next() {
+  if (roundOver.value) return
+  if (exhausted.value) {
+    roundOver.value = true
+    return
+  }
   if (list.value.length) buildQuestion(list.value)
   void nextTick(() => inputEl.value?.focus())
 }
 
-/** 切难度：换一道新题，连对重新算 */
+/** 切难度：换一道新题，连对重新算，这一轮的账也重开 */
 function setMode(m: Mode) {
   if (mode.value === m) return
   mode.value = m
-  streak.value = 0
-  next()
+  startRound()
 }
 
 /** 输入法正在拼字时按回车不算提交 */
@@ -186,11 +336,24 @@ function onEnter(e: KeyboardEvent) {
   check()
 }
 
+/** 选一轮多少题：改题量就从这一轮重新开始 */
+function chooseRound(n: RoundSize) {
+  if (roundSize.value === n) return
+  roundSize.value = n
+  startRound()
+}
+
+/** 下拉框换了：把字符串转成数字再交给 chooseRound */
+function onRoundChange(e: Event) {
+  const n = Number((e.target as HTMLSelectElement).value)
+  if ((ROUND_CHOICES as readonly number[]).includes(n)) chooseRound(n as RoundSize)
+}
+
 onMounted(async () => {
   try {
     list.value = await loadAnimeList()
     if (!list.value.length) throw new Error('empty')
-    buildQuestion(list.value)
+    startRound()
   } catch {
     error.value = true
   }
@@ -205,6 +368,10 @@ onMounted(async () => {
   } catch {
     hints.value = {}
   }
+})
+
+onUnmounted(() => {
+  window.clearTimeout(freshTimer)
 })
 
 /** 切到困难模式时把焦点放进输入框 */
@@ -268,9 +435,101 @@ function optionState(opt: AnimeEntry): 'idle' | 'right' | 'wrong' | 'dim' {
       </div>
     </header>
 
+    <!--
+      这一轮的账：出了几题、对了几题、拿到哪几枚章。
+      放在头和题面之间，一眼能看到进度，不用滚到最底下找。
+    -->
+    <div class="round-bar">
+      <div class="round-meta">
+        <span class="round-count">
+          <b>{{ Math.min(asked, roundSize) }}</b>
+          <span class="round-of">/ {{ roundSize }}</span>
+        </span>
+        <span class="round-right">答对 {{ rightCount }} · {{ pct }}%</span>
+
+        <!-- 题量：默认 20，可以换 -->
+        <label class="round-size">
+          <span class="round-size-label">题量</span>
+          <select
+            class="round-size-select"
+            :value="roundSize"
+            aria-label="这一轮出多少题"
+            @change="onRoundChange"
+          >
+            <option v-for="n in ROUND_CHOICES" :key="n" :value="n">{{ n }}</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- 进度条：答对的百分比就是它的长度 -->
+      <div class="round-track" aria-hidden="true">
+        <span class="round-fill" :style="{ width: `${pct}%` }" />
+        <!-- 七道坎：到了就点亮 -->
+        <span
+          v-for="m in MILESTONES"
+          :key="m"
+          class="round-tick"
+          :class="{ 'is-hit': reached.includes(m) }"
+          :style="{ left: `${m}%` }"
+        />
+      </div>
+
+      <!-- 七枚章：拿到的点亮，没拿到的空着 -->
+      <ul class="round-marks" aria-label="里程碑">
+        <li
+          v-for="m in MILESTONES"
+          :key="m"
+          class="round-mark"
+          :class="{
+            'is-hit': reached.includes(m),
+            'is-fresh': freshMilestone === m,
+          }"
+          :title="reached.includes(m) ? PRAISE[m] : `答对 ${m}% 解锁`"
+        >
+          {{ m }}
+        </li>
+      </ul>
+    </div>
+
+    <!-- 刚跨过一道坎：一枚章盖下来，配一句话 -->
+    <Transition name="praise">
+      <p v-if="freshMilestone" class="praise" role="status">
+        <span class="praise-mark">{{ freshMilestone }}%</span>
+        <span class="praise-text">{{ PRAISE[freshMilestone] }}</span>
+      </p>
+    </Transition>
+
     <div class="quiz-scroll">
       <p v-if="loading" class="quiz-state">正在翻评分表……</p>
       <p v-else-if="error" class="quiz-state">评分表没加载出来，刷新试试。</p>
+
+      <!-- 这一轮出满了：收尾页 -->
+      <div v-else-if="roundOver" class="round-over">
+        <p class="over-kicker">这一轮完</p>
+        <p class="over-score">
+          <b>{{ rightCount }}</b>
+          <span class="over-of">/ {{ roundSize }}</span>
+        </p>
+        <p class="over-pct">{{ pct }}%</p>
+        <p class="over-verdict">{{ overVerdict }}</p>
+
+        <ul class="over-marks" aria-label="这一轮拿到的章">
+          <li
+            v-for="m in MILESTONES"
+            :key="m"
+            class="over-mark"
+            :class="{ 'is-hit': reached.includes(m) }"
+            :title="reached.includes(m) ? PRAISE[m] : `答对 ${m}% 解锁`"
+          >
+            {{ m }}
+          </li>
+        </ul>
+
+        <button type="button" class="over-again" @click="startRound">
+          <RotateCcw :size="14" :stroke-width="2" aria-hidden="true" />
+          再来一轮
+        </button>
+      </div>
 
       <template v-else-if="answer">
         <!-- 题面：糊掉的封面 + 一句话 -->
@@ -362,9 +621,15 @@ function optionState(opt: AnimeEntry): 'idle' | 'right' | 'wrong' | 'dim' {
               </p>
             </div>
             <button type="button" class="reveal-next" @click="next">
-              <RotateCcw :size="14" :stroke-width="2" aria-hidden="true" />
-              下一题
-              <ArrowRight :size="13" :stroke-width="2" aria-hidden="true" />
+              <template v-if="exhausted">
+                看这一轮的成绩
+                <ArrowRight :size="13" :stroke-width="2" aria-hidden="true" />
+              </template>
+              <template v-else>
+                <RotateCcw :size="14" :stroke-width="2" aria-hidden="true" />
+                下一题
+                <ArrowRight :size="13" :stroke-width="2" aria-hidden="true" />
+              </template>
             </button>
           </div>
         </Transition>
@@ -585,6 +850,348 @@ function optionState(opt: AnimeEntry): 'idle' | 'right' | 'wrong' | 'dim' {
   font-size: 9px;
   letter-spacing: 0.1em;
   color: var(--ink-soft);
+}
+
+/* ── 这一轮的账 ─────────────────────────────────────────── */
+/*
+ * 一条细带子：左边是题数/答对数/题量，右边是七枚章。
+ * 放在头和题面之间，像杂志页眉底下的那行小字。
+ */
+.round-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: var(--r-input);
+  border: 1px dashed color-mix(in srgb, var(--line) 85%, transparent);
+  background: color-mix(in srgb, var(--bg-soft) 60%, transparent);
+  transition: border-radius var(--t-slow) var(--ease-out);
+}
+
+.is-hard .round-bar {
+  border-radius: 2px;
+  border-color: color-mix(in srgb, var(--stamp-ink) 26%, var(--line));
+}
+
+.round-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.round-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.round-count b {
+  font-weight: 600;
+}
+
+.round-of {
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+
+.round-right {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+/* 题量选择：一个很小的下拉，不抢眼 */
+.round-size {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+
+.round-size-label {
+  letter-spacing: 0.06em;
+}
+
+.round-size-select {
+  height: 20px;
+  padding: 0 3px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.round-size-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* 进度条：底下一根细线，答对的部分用 accent 填 */
+.round-track {
+  position: relative;
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ink-soft) 18%, transparent);
+  overflow: visible;
+}
+
+.round-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 78%, var(--ink));
+  transition: width 420ms var(--ease-out);
+}
+
+.is-hard .round-fill {
+  background: color-mix(in srgb, var(--stamp-ink) 72%, var(--ink));
+}
+
+/* 七道坎：没到是灰的短线，到了变成 accent */
+.round-tick {
+  position: absolute;
+  top: -2px;
+  width: 1px;
+  height: 7px;
+  margin-left: -0.5px;
+  background: color-mix(in srgb, var(--ink-soft) 40%, transparent);
+  transition: background-color var(--t-fast) var(--ease-out);
+}
+
+.round-tick.is-hit {
+  background: var(--accent);
+}
+
+.is-hard .round-tick.is-hit {
+  background: var(--stamp-ink);
+}
+
+/* ── 七枚章 ─────────────────────────────────────────────── */
+/*
+ * 像同人志集章页：拿到的盖实，没拿到的只剩一个虚线空位。
+ * 数字就是百分比，读起来比"第几枚"直观。
+ */
+.round-marks {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.round-mark {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--ink-soft) 34%, transparent);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--ink-soft) 55%, transparent);
+  transition:
+    border-color var(--t-base) var(--ease-out),
+    color var(--t-base) var(--ease-out),
+    background-color var(--t-base) var(--ease-out),
+    transform var(--t-base) var(--ease-out);
+}
+
+.round-mark.is-hit {
+  border: 1.5px solid var(--stamp-ink);
+  border-style: solid;
+  color: var(--stamp-ink);
+  background: color-mix(in srgb, var(--stamp-ink) 8%, transparent);
+  /* 盖歪一点，像手盖的 */
+  transform: rotate(-8deg);
+}
+
+/* 刚拿到的那一枚：弹一下再稳住 */
+.round-mark.is-fresh {
+  animation: mark-pop 700ms var(--ease-out);
+}
+
+@keyframes mark-pop {
+  0% {
+    transform: rotate(-8deg) scale(0.6);
+    opacity: 0.2;
+  }
+  55% {
+    transform: rotate(-8deg) scale(1.28);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-8deg) scale(1);
+  }
+}
+
+/* ── 跨过一道坎时的那句话 ───────────────────────────────── */
+.praise {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--r-input);
+  border: 1px solid color-mix(in srgb, var(--stamp-ink) 30%, var(--line));
+  background: color-mix(in srgb, var(--stamp-ink) 7%, var(--surface));
+}
+
+.praise-mark {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--stamp-ink);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: var(--stamp-ink);
+  transform: rotate(-8deg);
+}
+
+.praise-text {
+  font-family: var(--font-quote);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.praise-enter-active {
+  transition:
+    opacity var(--t-base) var(--ease-out),
+    transform var(--t-base) var(--ease-out);
+}
+
+.praise-enter-from {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+.praise-leave-active {
+  transition: opacity 400ms var(--ease-out);
+}
+
+.praise-leave-to {
+  opacity: 0;
+}
+
+/* ── 一轮结束的收尾页 ───────────────────────────────────── */
+.round-over {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 22px 12px 18px;
+  text-align: center;
+}
+
+.over-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.over-score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.over-score b {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.over-of {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.over-pct {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.is-hard .over-pct {
+  color: var(--stamp-ink);
+}
+
+.over-verdict {
+  max-width: 30em;
+  font-family: var(--font-quote);
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--ink);
+}
+
+.over-marks {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.over-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--ink-soft) 34%, transparent);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: color-mix(in srgb, var(--ink-soft) 50%, transparent);
+}
+
+.over-mark.is-hit {
+  border: 1.5px solid var(--stamp-ink);
+  border-style: solid;
+  color: var(--stamp-ink);
+  background: color-mix(in srgb, var(--stamp-ink) 8%, transparent);
+  transform: rotate(-8deg);
+}
+
+.over-again {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  min-height: 34px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+}
+
+.is-hard .over-again {
+  border-radius: 3px;
+  background: var(--stamp-ink);
 }
 
 /* ── 滚动区 ─────────────────────────────────────────────── */
@@ -1066,6 +1673,25 @@ function optionState(opt: AnimeEntry): 'idle' | 'right' | 'wrong' | 'dim' {
     justify-content: space-between;
   }
 
+  /*
+   * 手机上一行放不下"题数 + 答对 + 题量"，
+   * 让它们各占一行，章还是七枚横排——七个小圆点挤得下。
+   */
+  .round-meta {
+    gap: 4px 10px;
+  }
+
+  .round-size {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .round-mark {
+    width: 22px;
+    height: 22px;
+    font-size: 8px;
+  }
+
   .q-cover {
     width: 68px;
   }
@@ -1075,6 +1701,10 @@ function optionState(opt: AnimeEntry): 'idle' | 'right' | 'wrong' | 'dim' {
     -webkit-line-clamp: 4;
     line-clamp: 4;
   }
+
+  .over-score b {
+    font-size: 34px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1082,7 +1712,11 @@ function optionState(opt: AnimeEntry): 'idle' | 'right' | 'wrong' | 'dim' {
   .dim-fill,
   .quiz,
   .q-cover,
-  .q-cover img {
+  .q-cover img,
+  .round-fill,
+  .round-mark,
+  .praise-enter-active,
+  .praise-leave-active {
     transition: none;
   }
 
@@ -1092,6 +1726,10 @@ function optionState(opt: AnimeEntry): 'idle' | 'right' | 'wrong' | 'dim' {
   }
 
   .hard-input.is-shake {
+    animation: none;
+  }
+
+  .round-mark.is-fresh {
     animation: none;
   }
 }
@@ -1111,5 +1749,21 @@ function optionState(opt: AnimeEntry): 'idle' | 'right' | 'wrong' | 'dim' {
 
 [data-motion='off'] .hard-input.is-shake {
   animation: none;
+}
+
+[data-motion='off'] .round-fill,
+[data-motion='off'] .round-mark,
+[data-motion='off'] .praise-enter-active,
+[data-motion='off'] .praise-leave-active {
+  transition: none;
+}
+
+[data-motion='off'] .round-mark.is-fresh {
+  animation: none;
+}
+
+[data-motion='off'] .praise-enter-from {
+  opacity: 1;
+  transform: none;
 }
 </style>

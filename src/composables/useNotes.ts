@@ -7,10 +7,12 @@
  *   这个板子就干一件事：让三个格子里临时躺着三条东西，
  *   电脑上打开网站就能复制。
  *
- * 【为什么是"三个格子"而不是一个收件箱】
- *   收件箱会越堆越多，最后变成第二个微信收藏。
- *   三个格子是刻意的限制：想放第四条，就得先清掉一条。
- *   限制本身就是"这是临时中转，不是存档"的提醒。
+ * 【为什么没有条数上限】
+ *   一开始只给三个格子，是想提醒"这是中转，不是存档"。
+ *   真用起来三条明显不够——贴第三条就顶掉最旧的，等于丢东西。
+ *   现在板上能躺多少躺多少，格子按行往下排；
+ *   "不是存档"这件事交给 ntfy 自己的缓存期来提醒：
+ *   旧消息过一阵就过期，想留的东西要自己复制走。
  *
  * 【为什么用 ntfy】
  *   纯静态站没有后端。要跨设备，就必须有一个公共中转。
@@ -27,9 +29,9 @@
  *   别人不知道你的密钥，就找不到你的主题，也就读不到你的便条。
  *
  * 【三条是怎么数出来的】
- *   ntfy 会保留一段时间的历史消息。我们只取最近 N 条，
- *   超过三条时把最旧的删掉——ntfy 支持 DELETE，需要那条消息的 id。
- *   这样"最多三条"是真的三条，不是"界面上只显示三条"。
+ *   ntfy 会保留一段时间的历史消息。我们拉取时只取最近的若干条，
+ *   免得一个用了很久的主题一次拉回几百条。
+ *   贴新的不再删旧的——要清哪张，自己点「撕掉」。
  */
 import { site } from '@/data/site.config'
 
@@ -47,8 +49,14 @@ export interface Note {
   imageName: string | null
 }
 
-/** 一次最多留三条 */
-export const MAX_NOTES = 3
+/**
+ * 一次最多取多少条。
+ *
+ * 不是"最多能贴几条"——贴多少都行，板子上都留着。
+ * 这是单次拉取的上限：一个用了半年的主题可能攒了几百条，
+ * 一次全拉回来既慢又没必要。50 条够翻很久了。
+ */
+export const FETCH_LIMIT = 50
 
 /** 密钥存在这里。和站点其他设置分开，清缓存不会顺手清掉它 */
 const KEY_STORAGE = 'site:notes:key'
@@ -162,7 +170,7 @@ function toNote(raw: RawMessage): Note | null {
 }
 
 /**
- * 拉最近三条。
+ * 拉最近的便条。
  *
  * 【为什么用 ?poll=1 而不是 WebSocket】
  *   订阅（/sse 或 /ws）会一直挂着一条连接，首页只是"打开看一眼"，
@@ -172,7 +180,7 @@ function toNote(raw: RawMessage): Note | null {
  * 【为什么带 since=all】
  *   ntfy 默认只返回"从现在开始"的新消息。
  *   我们要的是"板子上现有的"，所以明确要全部历史，
- *   再自己截到三条。
+ *   再自己截到 FETCH_LIMIT 条。
  */
 export async function fetchNotes(topic: string): Promise<Note[]> {
   const res = await fetch(`${currentServer()}/${topic}/json?poll=1&since=all`, {
@@ -195,7 +203,7 @@ export async function fetchNotes(topic: string): Promise<Note[]> {
 
   // 新的在前
   notes.sort((a, b) => b.time - a.time)
-  return notes.slice(0, MAX_NOTES)
+  return notes.slice(0, FETCH_LIMIT)
 }
 
 /** 发一条文字。返回新消息的 id */
@@ -243,7 +251,7 @@ export async function postImage(
   return data.id ?? ''
 }
 
-/** 删掉一条。用来维持"最多三条" */
+/** 删掉一条 */
 export async function deleteNote(topic: string, id: string): Promise<void> {
   // 删不掉不算致命：界面上已经把它剔掉了，下次刷新会再试
   await fetch(`${currentServer()}/${topic}/${id}`, { method: 'DELETE' }).catch(() => undefined)

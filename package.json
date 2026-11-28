@@ -1,6 +1,6 @@
 {
   "name": "blog",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "description": "个人博客：番剧感想、技术备忘与随笔",

@@ -24,9 +24,9 @@ export interface MoyuTab {
 export const MOYU_TABS: readonly MoyuTab[] = [
   { key: 'novel', label: '读本', unit: '一本小说' },
   { key: 'gacha', label: '抽签', unit: '一次抽签' },
-  { key: 'quiz', label: '猜番', unit: '一道题' },
+  { key: 'quiz', label: '猜番', unit: '一轮猜番' },
   { key: 'top', label: '十佳', unit: '一份十佳' },
-  { key: 'notes', label: '便条', unit: '三张便条' },
+  { key: 'notes', label: '便条', unit: '一块便条板' },
 ] as const
 
 /** 附录是否正占着视口中段。true 时顶部导航换成附录栏目 */

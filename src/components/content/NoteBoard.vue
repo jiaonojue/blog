@@ -2,11 +2,13 @@
 /**
  * 便条板 —— 摸鱼分区里那个"手机写、电脑取"的格子。
  *
- * 【为什么它长成三个格子，而不是一个列表】
- *   三个格子是刻意的容量上限（见 useNotes 的注释）。
- *   视觉上也按"三张便利贴贴在软木板上"来做：
+ * 【为什么它长成"贴在软木板上的一叠纸"】
  *   每张有点自己的倾斜角度、纸色、按钉——
- *   这样"只有三条"看起来是设计，而不是功能缺失。
+ *   这样一堆便条看起来像真的钉上去的，而不是一个列表控件。
+ *
+ * 【为什么不限条数】
+ *   早先只给三个格子，结果贴第四条就得顶掉最旧的，等于丢东西。
+ *   现在写多少留多少，格子按行往下排；要清哪张自己点「撕掉」。
  *
  * 【为什么要有密钥这道门】
  *   数据放在公共中转站上，谁知道主题名谁就能读。
@@ -23,7 +25,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Check, Copy, KeyRound, Loader, Lock, Plus, Trash, X } from '@lucide/vue'
 import {
-  MAX_NOTES,
   ago,
   copyText,
   currentServer,
@@ -73,10 +74,17 @@ const fileInput = ref<HTMLInputElement | null>(null)
 /** 选好了但还没发的图 */
 const pendingImage = ref<{ blob: Blob; name: string; preview: string } | null>(null)
 
-const full = computed(() => notes.value.length >= MAX_NOTES)
 const canSend = computed(
   () => !posting.value && (draft.value.trim().length > 0 || !!pendingImage.value),
 )
+
+/**
+ * 空格子的数量。
+ *
+ * 板子上空空如也时，摆三张虚线格告诉人"这里能贴东西"；
+ * 一旦有了一条，空格子就全部撤掉——不再暗示"只有三格"。
+ */
+const emptySlots = computed(() => (notes.value.length ? 0 : 3))
 
 let refreshTimer = 0
 let copiedTimer = 0
@@ -187,14 +195,6 @@ async function send() {
     draft.value = ''
     clearPending()
     await refresh()
-
-    /*
-     * 超过三条：把最旧的删掉。
-     * 列表已经按时间倒序，多出来的都在尾部。
-     */
-    const extra = notes.value.slice(MAX_NOTES)
-    for (const n of extra) await deleteNote(topic.value, n.id)
-    if (extra.length) await refresh()
   } catch (err) {
     error.value = err instanceof Error ? `没发出去：${err.message}` : '没发出去'
   } finally {
@@ -289,7 +289,7 @@ watch(unlocked, (on) => {
         <p class="notes-kicker">note board</p>
         <h3 class="notes-title">便条板</h3>
         <p class="notes-sub">
-          {{ unlocked ? `手机写一条，电脑上复制走 · 最多 ${MAX_NOTES} 条` : '一把钥匙，三格便条' }}
+          {{ unlocked ? '手机写一条，电脑上复制走 · 想留几条留几条' : '一把钥匙，一块自己的板' }}
         </p>
       </div>
       <button v-if="unlocked" type="button" class="notes-lock" title="锁上" @click="lock">
@@ -400,8 +400,8 @@ watch(unlocked, (on) => {
             <button
               type="button"
               class="compose-send"
-              :disabled="!canSend || full"
-              :title="full ? '先删掉一条，最多三条' : '贴上去'"
+              :disabled="!canSend"
+              title="贴上去"
               @click="send"
             >
               <Loader v-if="posting" :size="14" class="spin" aria-hidden="true" />
@@ -413,20 +413,19 @@ watch(unlocked, (on) => {
         <input ref="fileInput" type="file" accept="image/*" class="sr-only" @change="onPickImage" />
 
         <p class="compose-hint">
-          <span v-if="full">板子满了，先撕掉一张。</span>
-          <span v-else>Ctrl / ⌘ + Enter 也能贴。图会先压到 1600px。</span>
+          <span>Ctrl / ⌘ + Enter 也能贴。图会先压到 1600px。</span>
         </p>
       </div>
 
       <p v-if="error" class="notes-error">{{ error }}</p>
 
-      <!-- 三格便条 -->
+      <!-- 便条：贴在板上的一叠纸，写多少留多少 -->
       <ul class="notes-grid" :class="{ 'is-empty': !notes.length }">
         <li
           v-for="(note, i) in notes"
           :key="note.id"
           class="note"
-          :class="[`note--${i}`, { 'is-removing': removingId === note.id }]"
+          :class="[`note--${i % 3}`, { 'is-removing': removingId === note.id }]"
         >
           <!-- 按钉 -->
           <span class="note-pin" aria-hidden="true" />
@@ -470,15 +469,15 @@ watch(unlocked, (on) => {
           </footer>
         </li>
 
-        <!-- 空格子：告诉你有几个位置，别让人以为是加载中 -->
+        <!-- 空格子：只在板上什么都没有时出现，告诉人这里能贴 -->
         <li
-          v-for="slot in Math.max(0, MAX_NOTES - notes.length)"
+          v-for="slot in emptySlots"
           :key="`empty-${slot}`"
           class="note note--empty"
           aria-hidden="true"
         >
           <span class="note-pin" />
-          <span class="empty-mark">{{ slot === MAX_NOTES ? '空' : '' }}</span>
+          <span class="empty-mark">{{ slot === 3 ? '空' : '' }}</span>
         </li>
       </ul>
     </template>
@@ -820,7 +819,7 @@ watch(unlocked, (on) => {
   color: var(--stamp-ink);
 }
 
-/* ── 三格便条 ───────────────────────────────────────────── */
+/* ── 便条：贴在板上的一叠纸 ─────────────────────────────── */
 .notes-grid {
   flex: 1;
   min-height: 0;
@@ -828,6 +827,14 @@ watch(unlocked, (on) => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   align-content: start;
+  /*
+   * 不限条数之后，便条可能比卡片高。
+   * 让这一块自己滚：输入框留在上面不动，翻看旧便条不用把整页滚走。
+   */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  /* 便条有轻微倾斜，滚动容器边缘会切到一点，留出余量 */
+  padding: 3px 2px;
 }
 
 .note {
@@ -1009,11 +1016,11 @@ watch(unlocked, (on) => {
   }
 
   .note--empty {
-    /* 手机上空格子只留一张，不然要滑半天才见到输入框 */
+    /* 手机上空格子只留一张，三张虚线排下来太占地方 */
     display: none;
   }
 
-  .note--empty:first-of-type:not(:only-child) {
+  .note--empty:first-of-type {
     display: flex;
   }
 }

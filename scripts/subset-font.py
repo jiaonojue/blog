@@ -50,7 +50,7 @@ FONTS = [
     (
         ROOT / "node_modules/@fontsource/zcool-kuaile/files/zcool-kuaile-chinese-simplified-400-normal.woff2",
         "zcool-kuaile-subset.woff2",
-        150,  # 站酷快乐体：标题用，字号大但字数少
+        170,  # 站酷快乐体：标题用，字号大但字数少。0.3.1 加了猜番一轮的 UI 字，涨到 154
     ),
     (
         ROOT / "node_modules/@fontsource/lxgw-wenkai/files/lxgw-wenkai-latin-500-normal.woff2",
